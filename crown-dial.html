@@ -1,0 +1,1736 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crown Dial</title>
+<style>
+:root{
+  --bg:#101216; --panel:#16191f; --line:#262a33; --text:#e2e5ea; --muted:#8b929d; --dim:#5d636d;
+  --accent:#9fb6d8; --amber:#e2a845; --amber-bg:rgba(226,168,69,.10); --red:#f0544b; --red-bg:rgba(240,84,75,.10);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text)}
+body{font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;padding-bottom:120px;overflow-x:hidden}
+main{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:15px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:4px 0 16px}
+h2{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:22px 0 8px}
+.tab{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)} .dim{color:var(--dim)}
+.amber{color:var(--amber)} .red{color:var(--red)}
+.notice{border:1px solid var(--line);background:var(--panel);padding:8px 12px;border-radius:8px;margin-bottom:12px;color:var(--accent)}
+.notice:empty{display:none}
+.menu{list-style:none;padding:0;margin:0}
+.menu li{display:flex;gap:12px;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--line)}
+.menu kbd{min-width:1.8em;text-align:center}
+kbd{font:inherit;font-size:12px;font-variant-numeric:tabular-nums;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;color:var(--text);background:var(--panel);white-space:nowrap}
+.hist{font-size:13px;color:var(--muted)}
+.hist div{padding:4px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+/* setup */
+.field{margin:14px 0}
+.field label,.field .lbl{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+textarea,input[type=text],input[type=number]{width:100%;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit;font-variant-numeric:tabular-nums}
+textarea{min-height:150px;resize:vertical}
+textarea:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg label{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--text);margin:0;font-size:14px}
+.seg input{accent-color:var(--accent);margin:0}
+.seg label:focus-within{outline:2px solid var(--accent)}
+.row2{display:flex;gap:12px;flex-wrap:wrap}.row2>.field{flex:1 1 140px}
+.err{color:var(--amber);min-height:1.4em}
+.hint{font-size:13px;color:var(--dim)}
+/* run */
+.head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:13px;letter-spacing:.04em}
+.qid{font-size:clamp(18px,5vw,26px);margin:10px 0 0;overflow-wrap:anywhere}
+.clock{font-variant-numeric:tabular-nums;font-weight:300;letter-spacing:-.02em;line-height:1;margin:14px 0 6px;font-size:clamp(64px,24vw,176px);white-space:nowrap}
+.clock.long{font-size:clamp(46px,16vw,150px)}
+.clock.amber{color:var(--amber)} .clock.red{color:var(--red)}
+.clabel{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+.info{display:flex;flex-wrap:wrap;gap:6px 18px;margin:10px 0;font-size:14px}
+.info span b{font-weight:500;color:var(--muted);margin-right:6px}
+.banner{border-left:3px solid var(--accent);background:var(--panel);padding:8px 12px;margin:8px 0;border-radius:0 6px 6px 0}
+.banner.amber{border-color:var(--amber);background:var(--amber-bg);color:var(--amber)}
+.banner.red{border-color:var(--red);background:var(--red-bg);color:var(--red)}
+.prompt{border:1px solid var(--accent);padding:10px 12px;border-radius:8px;margin:10px 0}
+.msg{color:var(--amber);margin:8px 0}
+.tag-peek{display:inline-block;font-size:12px;border:1px solid var(--line);border-radius:4px;padding:0 5px;color:var(--accent);margin-left:6px;vertical-align:middle}
+.strip{display:flex;flex-wrap:wrap;gap:4px;margin:16px 0 4px}
+.strip span{min-width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:5px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.strip span.cur{border-color:var(--accent);color:var(--text)}
+.strip span.amber{border-color:var(--amber);color:var(--amber)}
+.strip span.red{border-color:var(--red);color:var(--red)}
+.strip-key{font-size:12px;color:var(--dim)}
+.rows{margin:10px 0}
+.r{display:grid;grid-template-columns:1.6em 1fr auto;gap:2px 8px;padding:7px 6px;border-bottom:1px solid var(--line);align-items:baseline}
+.r.focus{background:var(--panel);outline:1px solid var(--accent);border-radius:6px}
+.r .mk{font-size:16px;text-align:center}
+.r .id{overflow-wrap:anywhere}
+.r .meta{font-size:12px;color:var(--muted);text-align:right;white-space:nowrap}
+.r .sub{grid-column:2/4;font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.paused{text-align:center;padding:20px 0}
+.paused .big{font-size:clamp(28px,9vw,56px);letter-spacing:.2em;color:var(--accent);margin:10px 0}
+.secs{display:flex;gap:8px;margin:12px 0}
+.secs div{flex:1;border:1px solid var(--line);border-radius:8px;padding:8px;text-align:center}
+.secs div.on{border-color:var(--accent)}
+.secs b{display:block;font-size:13px;color:var(--muted);font-weight:500}
+.secs span{font-size:clamp(16px,5vw,22px)}
+.sum{white-space:normal}
+.sum dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:8px 0}
+.sum dt{color:var(--muted)} .sum dd{margin:0;overflow-wrap:anywhere}
+#inputRow{margin:10px 0}
+#inputRow label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+#copyBox textarea{min-height:200px;font-size:12px}
+.copied{color:var(--accent);margin-left:8px}
+#tests li{padding:3px 0;border-bottom:1px solid var(--line);font-size:13px;list-style:none}
+#tests{padding:0}
+/* legend */
+#legend{position:fixed;left:0;right:0;bottom:0;background:rgba(16,18,22,.97);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+#legend .in{max-width:640px;margin:0 auto;display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}
+#legend .in span{white-space:nowrap}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:no-preference){.clock{transition:color .4s}}
+</style>
+</head>
+<body>
+<main id="app">
+  <div id="notice" class="notice" role="status"></div>
+  <section id="screen-home" hidden></section>
+  <section id="screen-setup" hidden>
+    <h1 id="setupTitle">Setup</h1>
+    <div class="field" data-modes="practice reattempt">
+      <label for="ids" id="idsLabel">Question IDs — one per line (or just a count)</label>
+      <textarea id="ids" spellcheck="false" placeholder="O-II Q12 · TC0064&#10;O-II Q13 · TC0065&#10;…&#10;&#10;or just: 12"></textarea>
+      <div class="hint" id="idsHint"></div>
+    </div>
+    <div class="field" data-modes="practice">
+      <span class="lbl" id="blockLbl">Block length (solve + log)</span>
+      <div class="seg" role="radiogroup" aria-labelledby="blockLbl">
+        <label><input type="radio" name="block" value="90" checked> 90 · 75+15</label>
+        <label><input type="radio" name="block" value="60"> 60 · 50+10</label>
+        <label><input type="radio" name="block" value="45"> 45 · 37+8</label>
+        <label><input type="radio" name="block" value="custom"> custom</label>
+      </div>
+    </div>
+    <div class="row2" data-modes="practice">
+      <div class="field"><label for="customMin">Custom block (min)</label><input id="customMin" type="number" min="6" max="300" step="1" value="30"></div>
+      <div class="field"><label for="targetMin">Target pace (min / question)</label><input id="targetMin" type="number" min="0.5" max="60" step="0.5" value="4.5"></div>
+    </div>
+    <div class="hint" data-modes="practice" id="splitHint"></div>
+    <div class="field" data-modes="blurt mock">
+      <label for="label" id="labelLbl">Label (optional)</label>
+      <input id="label" type="text" maxlength="60" spellcheck="false">
+    </div>
+    <div class="hint" id="modeHint"></div>
+    <div class="err" id="setupErr" role="alert"></div>
+  </section>
+  <section id="screen-run" hidden>
+    <div id="runBody"></div>
+    <div id="inputRow" hidden><label for="field" id="fieldLabel"></label><input id="field" type="text" autocomplete="off" spellcheck="false"></div>
+    <div id="runTail"></div>
+    <div id="copyBox" hidden><h2>Copy this text</h2><textarea id="copyText" readonly></textarea></div>
+  </section>
+  <section id="screen-test" hidden><h1 id="testHead">Self-test</h1><ul id="tests"></ul></section>
+</main>
+<footer id="legend"><div class="in" id="legendIn"></div></footer>
+
+<script id="core">
+/* Crown Dial — Core: a pure state machine. No DOM, no clock, no storage, no timers, no randomness. */
+globalThis.Core = (function () {
+  'use strict';
+  var SEC = 1000, MIN = 60 * SEC, DAY = 24 * 60 * MIN;
+  var K = {
+    DIR_MS: 2 * MIN, NAG_MS: 30 * SEC, PASS2_CAP_MS: 5 * MIN, REATTEMPT_CAP_MS: 10 * MIN,
+    BLURT_WRITE_MS: 30 * MIN, BLURT_CHECK_MS: 5 * MIN, PAPER_MS: 180 * MIN, MOCK_BREAK_MS: 45 * MIN,
+    PRACTICE_MIN_Q: 10, PRACTICE_MAX_Q: 15, MAX_Q: 50, HISTORY_MAX: 30, ANSWER_MAX: 40, NOTE_MAX: 140,
+    BREAK_PRESETS: [5, 10, 15]
+  };
+  var PRESETS = { 90: [75, 15], 60: [50, 10], 45: [37, 8] };
+  var TAGS = ['C', 'A', 'S', 'T'];
+  var SETUP_MODES = ['practice', 'reattempt', 'blurt', 'mock'];
+  var MODE_NAMES = { practice: 'Practice set', reattempt: 'Re-attempt', blurt: 'Blurt', mock: 'Mock paper', 'break': 'Break' };
+  var SECS = ['P', 'C', 'M'];
+  var KNOWN = ['TICK', 'GO_SETUP', 'GO_HOME', 'START', 'PAUSE', 'CONTINUE', 'PARK', 'OPEN_ANSWER', 'COMMIT', 'CANCEL',
+    'BLANK', 'PEEK', 'TO_LOG', 'FOCUS', 'MARK', 'TAG', 'OPEN_NOTE', 'SAVE_NOTE', 'FINISH', 'NEW', 'ABANDON',
+    'ABANDON_CONFIRM', 'SECTION', 'END_EARLY', 'START_PAPER2', 'END_BREAK', 'COPY'];
+
+  function clone(x) { return x == null ? x : JSON.parse(JSON.stringify(x)); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function fmt(ms) {
+    var s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+    return h ? h + ':' + pad(m) + ':' + pad(x) : m + ':' + pad(x);
+  }
+  function fmtDown(ms) { return fmt(Math.ceil(Math.max(0, ms) / 1000) * 1000); }
+  // countdown: remaining > 0 -> "m:ss"; below zero -> "+m:ss" overrun
+  function cd(rem) { return rem >= 0 ? { text: fmtDown(rem), over: false } : { text: '+' + fmt(-rem), over: true }; }
+  function isoDay(ms) { return new Date(ms).toISOString().slice(0, 10); }
+  function localStamp(ms, tz) { var d = new Date(ms + tz * MIN).toISOString(); return d.slice(0, 10) + ' ' + d.slice(11, 16); }
+
+  /* ---------- time model: everything from timestamps, pauses subtracted ---------- */
+  function pauseOverlap(P, a, b) {
+    var o = 0;
+    for (var i = 0; i < P.length; i++) {
+      var s = Math.max(P[i].start, a), e = Math.min(P[i].end == null ? Infinity : P[i].end, b);
+      if (e > s) o += e - s;
+    }
+    return o;
+  }
+  function active(P, a, b) { return b <= a ? 0 : (b - a) - pauseOverlap(P, a, b); }
+  // earliest T >= a such that active(P, a, T) >= ms; Infinity if an open pause blocks it
+  function atActive(P, a, ms) {
+    var t = a, rem = Math.max(0, ms);
+    for (var i = 0; i < P.length; i++) {
+      var p = P[i];
+      if (p.end != null && p.end <= t) continue;
+      var ps = Math.max(p.start, t);
+      if (ps - t >= rem) return t + rem;
+      rem -= ps - t;
+      if (p.end == null) return Infinity;
+      t = p.end;
+    }
+    return t + rem;
+  }
+  function isPaused(b) { var p = b.pauses[b.pauses.length - 1]; return !!p && p.end == null; }
+  function openSeg(q) { var g = q.segments[q.segments.length - 1]; return g && g.end == null ? g : null; }
+  function qActive(b, q, now) {
+    var s = 0;
+    for (var i = 0; i < q.segments.length; i++) { var g = q.segments[i]; s += active(b.pauses, g.start, g.end == null ? now : g.end); }
+    return s;
+  }
+  function qDueTotal(b, q, total) {
+    var g = openSeg(q); if (!g) return null;
+    var closed = 0;
+    for (var i = 0; i < q.segments.length; i++) { var x = q.segments[i]; if (x.end != null) closed += active(b.pauses, x.start, x.end); }
+    return atActive(b.pauses, g.start, total - closed);
+  }
+  function curQ(b) { var q = b.cur >= 0 ? b.questions[b.cur] : null; return q && q.status === 'active' ? q : null; }
+
+  function splits(blockMin) {
+    var m = Math.round(Number(blockMin));
+    if (!isFinite(m) || m <= 0) return null;
+    if (PRESETS[m]) return { blockMin: m, solveMin: PRESETS[m][0], logMin: PRESETS[m][1] };
+    var s = Math.round(m * 5 / 6);
+    return { blockMin: m, solveMin: s, logMin: m - s };
+  }
+  function parseIds(text) {
+    var lines = String(text == null ? '' : text).split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean);
+    if (lines.length === 1 && /^\d{1,3}$/.test(lines[0])) {
+      var n = +lines[0], out = [];
+      for (var i = 1; i <= n; i++) out.push('Q' + i);
+      return out;
+    }
+    return lines.map(function (l) { return l.slice(0, 60); });
+  }
+
+  function initial() {
+    return { v: 1, screen: 'home', setupMode: null, setupError: null, block: null, history: [],
+      prefs: { targetMin: 4.5, blockChoice: '90', customMin: 30 } };
+  }
+  function isValidState(s) {
+    return !!s && typeof s === 'object' && s.v === 1 && ['home', 'setup', 'block'].indexOf(s.screen) >= 0 &&
+      Array.isArray(s.history) && (s.block === null || (typeof s.block === 'object' && Array.isArray(s.block.pauses))) &&
+      (s.screen !== 'block' || !!s.block);
+  }
+  function mkQ(id) {
+    return { id: id, status: 'unreached', startedAt: null, endedAt: null, segments: [], answer: null, peekedAt: null,
+      parkedAt: null, dirAt: null, dirChoice: null, dirChoiceAt: null, targetAt: null, doubleAt: null, nags: 0,
+      capAt: null, timedOut: false, mark: null, tag: null, note: null };
+  }
+  function baseBlock(mode, t, tz, label) {
+    return { mode: mode, label: label || null, startedAt: t, tz: tz, lastT: t, phase: null, endedAt: null,
+      abandonedAt: null, pauses: [], ui: { input: null, msg: null } };
+  }
+
+  /* ---------- scheduled events (catch-up) ---------- */
+  function nextEvent(b) {
+    var P = b.pauses, c = [];
+    function add(at, kind) { if (at != null && isFinite(at)) c.push({ at: at, kind: kind }); }
+    if (b.mode === 'practice' || b.mode === 'reattempt') {
+      var q = curQ(b);
+      if (q) {
+        var g = openSeg(q);
+        if (b.mode === 'practice') {
+          var T = b.config.targetMs;
+          if (b.phase === 'solve' && g.pass === 1 && q.dirAt == null) add(qDueTotal(b, q, K.DIR_MS), 'direction');
+          if (q.targetAt == null) add(qDueTotal(b, q, T), 'target');
+          else if (q.doubleAt == null) add(qDueTotal(b, q, 2 * T), 'double');
+          else add(qDueTotal(b, q, 2 * T + K.NAG_MS * (q.nags + 1)), 'nag');
+          if (g.pass === 2 && q.capAt == null) add(atActive(P, g.start, K.PASS2_CAP_MS), 'cap');
+        } else if (q.capAt == null) add(qDueTotal(b, q, b.config.capMs), 'cap');
+      }
+      if (b.mode === 'practice') {
+        if (b.phase === 'solve') add(atActive(P, b.solveStartedAt, b.config.solveMs), 'solveEnd');
+        else if (b.phase === 'log' && b.logOverAt == null) add(atActive(P, b.logStartedAt, b.config.logMs), 'logEnd');
+      }
+    } else if (b.mode === 'blurt') {
+      if (b.phase === 'write') add(atActive(P, b.writeStartedAt, b.config.writeMs), 'writeEnd');
+      else if (b.phase === 'check' && b.checkOverAt == null) add(atActive(P, b.checkStartedAt, b.config.checkMs), 'checkEnd');
+    } else if (b.mode === 'mock') {
+      if (b.phase === 'paper1' || b.phase === 'paper2') add(atActive(P, b.papers[b.papers.length - 1].startedAt, b.config.paperMs), 'paperEnd');
+      else if (b.phase === 'break' && b.breakOverAt == null) add(atActive(P, b.breakStartedAt, b.config.breakMs), 'breakEnd');
+    } else if (b.mode === 'break') {
+      if (b.phase === 'break' && b.overAt == null) add(atActive(P, b.startedAt, b.config.breakMs), 'breakOver');
+    }
+    var best = null;
+    for (var i = 0; i < c.length; i++) if (!best || c[i].at < best.at) best = c[i];
+    return best;
+  }
+  function snd(name) { return { type: 'sound', name: name }; }
+  function ntf(title, body) { return { type: 'notify', title: title, body: body }; }
+  function applyEvent(b, ev, fx) {
+    var at = ev.at, q = curQ(b);
+    switch (ev.kind) {
+      case 'direction': q.dirAt = at; fx.push(snd('direction'), ntf('Direction?', q.id + ' · 2:00 — C continue, P park ↩')); break;
+      case 'target': q.targetAt = at; fx.push(snd('soft')); break;
+      case 'double': q.doubleAt = at; fx.push(snd('nag'), ntf('2× target pace', q.id + ' — commit or blank')); break;
+      case 'nag': q.nags += 1; fx.push(snd('nag')); break;
+      case 'cap': q.capAt = at; fx.push(snd('cap'), ntf('Cap reached', q.id + ' — commit or blank now')); break;
+      case 'solveEnd':
+        b.phase = 'log'; b.solveEndedAt = at; b.logStartedAt = at; b.focus = 0;
+        b.questions.forEach(function (x) {
+          if (x.status === 'unreached' || x.status === 'parked') { x.mark = 'x'; x.tag = 'T'; x.timedOut = true; }
+        });
+        if (q) b.overtimeIdx = b.cur; else b.cur = -1;
+        fx.push(snd('loud'), ntf('Solve time over', q ? 'Finish ' + q.id + ' now (commit or blank), then log.' : 'Log phase started.'));
+        break;
+      case 'logEnd': b.logOverAt = at; fx.push(snd('loud'), ntf('Log time over', 'Finish marking — overrun is being recorded.')); break;
+      case 'writeEnd':
+        b.writeEndedAt = at; b.phase = 'check'; b.checkStartedAt = at;
+        fx.push(snd('loud'), ntf('Write time over', 'Check for 5:00.')); break;
+      case 'checkEnd': b.checkOverAt = at; fx.push(snd('loud'), ntf('Check time over', 'Overrun is being recorded — F to finish.')); break;
+      case 'paperEnd': endPaper(b, at, false); fx.push(snd('loud'), ntf('Paper ' + b.papers.length + ' over', b.phase === 'break' ? '45-minute break started.' : 'Mock finished.')); break;
+      case 'breakEnd': b.breakOverAt = at; fx.push(snd('loud'), ntf('Break over', 'Enter starts Paper 2 — overrun is being recorded.')); break;
+      case 'breakOver': b.overAt = at; fx.push(snd('loud'), ntf('Break over', 'Start your next block — overrun is being recorded.')); break;
+    }
+    if (at > b.lastT) b.lastT = at;
+  }
+  function advance(b, t, fx) {
+    for (var guard = 0; guard < 2000000; guard++) {
+      var ev = nextEvent(b);
+      if (!ev || ev.at > t) return;
+      applyEvent(b, ev, fx);
+    }
+  }
+
+  /* ---------- transitions ---------- */
+  function activate(b, i, t) {
+    var q = b.questions[i];
+    q.status = 'active';
+    if (q.startedAt == null) q.startedAt = t;
+    q.segments.push({ start: t, end: null, pass: b.pass });
+    b.cur = i;
+  }
+  function nextQuestion(b, t) {
+    var i = -1, qs = b.questions, k;
+    if (b.pass === 1) {
+      for (k = 0; k < qs.length; k++) if (qs[k].status === 'unreached') { i = k; break; }
+      if (i < 0 && b.mode === 'practice') {
+        for (k = 0; k < qs.length; k++) if (qs[k].status === 'parked') { i = k; break; }
+        if (i >= 0) b.pass = 2;
+      }
+    } else {
+      for (k = 0; k < qs.length; k++) if (qs[k].status === 'parked') { i = k; break; }
+    }
+    if (i >= 0) { activate(b, i, t); return; }
+    b.cur = -1;
+    if (b.mode === 'reattempt') { b.phase = 'log'; b.solveEndedAt = t; b.logStartedAt = t; b.focus = 0; }
+  }
+  function endQuestion(b, q, status, answer, t) {
+    var g = openSeg(q);
+    g.end = t; q.status = status; q.answer = answer; q.endedAt = t; b.ui.input = null;
+    if (status === 'blank' || q.peekedAt != null) q.mark = 'x';
+    if (q.dirAt != null && q.dirChoice == null) { q.dirChoice = status; q.dirChoiceAt = t; }
+    if (b.overtimeIdx != null) {
+      b.overrun.solveMs = active(b.pauses, b.solveEndedAt, t);
+      b.overtimeIdx = null; b.cur = -1; b.focus = 0;
+      return;
+    }
+    nextQuestion(b, t);
+  }
+  function enterLog(b, t) { b.phase = 'log'; b.solveEndedAt = t; b.logStartedAt = t; b.focus = 0; b.cur = -1; }
+  function endPaper(b, t, early) {
+    var p = b.papers[b.papers.length - 1], g = p.segs[p.segs.length - 1];
+    if (g && g.end == null) g.end = t;
+    p.endedAt = t; p.early = !!early;
+    if (b.phase === 'paper1') { b.phase = 'break'; b.breakStartedAt = t; }
+    else { b.phase = 'summary'; b.endedAt = t; }
+  }
+  function newPaper(t) { return { startedAt: t, endedAt: null, early: false, sec: 'P', segs: [{ sec: 'P', start: t, end: null }] }; }
+  function archive(s) {
+    s.history = s.history.concat([s.block]).slice(-K.HISTORY_MAX);
+    s.block = null; s.screen = 'home'; s.setupMode = null; s.setupError = null;
+  }
+  function isTimed(b) {
+    switch (b.mode) {
+      case 'practice': return b.phase === 'solve' || b.phase === 'log';
+      case 'reattempt': return b.phase === 'solve';
+      case 'blurt': return b.phase === 'write' || b.phase === 'check';
+      case 'mock': return b.phase === 'paper1' || b.phase === 'break' || b.phase === 'paper2';
+      case 'break': return b.phase === 'break';
+    }
+    return false;
+  }
+  function setupErr(s, m) { s.setupError = m; return true; }
+
+  function startBlock(s, a, t) {
+    var mode = a.mode, tz = Number(a.tz); tz = isFinite(tz) ? Math.max(-840, Math.min(840, Math.round(tz))) : 0;
+    var b;
+    if (mode === 'practice' || mode === 'reattempt') {
+      var ids = parseIds(a.idsText);
+      if (mode === 'practice') {
+        if (ids.length < K.PRACTICE_MIN_Q || ids.length > K.PRACTICE_MAX_Q)
+          return setupErr(s, 'A practice set is ' + K.PRACTICE_MIN_Q + '–' + K.PRACTICE_MAX_Q + ' questions (you gave ' + ids.length + ').');
+        var sp = splits(a.blockMin);
+        if (!sp || sp.blockMin < 6 || sp.blockMin > 300) return setupErr(s, 'Block length must be 6–300 minutes.');
+        var tm = Number(a.targetMin);
+        if (!(tm >= 0.5 && tm <= 60)) return setupErr(s, 'Target pace must be 0.5–60 minutes.');
+        b = baseBlock('practice', t, tz, null);
+        b.config = { blockMin: sp.blockMin, solveMs: sp.solveMin * MIN, logMs: sp.logMin * MIN, targetMs: Math.round(tm * MIN) };
+        s.prefs = { targetMin: tm, blockChoice: PRESETS[sp.blockMin] && a.blockChoice !== 'custom' ? String(sp.blockMin) : 'custom',
+          customMin: a.blockChoice === 'custom' ? sp.blockMin : (s.prefs ? s.prefs.customMin : 30) };
+      } else {
+        if (ids.length < 1 || ids.length > K.MAX_Q) return setupErr(s, 'Give 1–' + K.MAX_Q + ' question IDs (you gave ' + ids.length + ').');
+        b = baseBlock('reattempt', t, tz, null);
+        b.config = { capMs: K.REATTEMPT_CAP_MS };
+      }
+      b.phase = 'solve'; b.pass = 1; b.cur = -1; b.focus = 0; b.overtimeIdx = null;
+      b.solveStartedAt = t; b.solveEndedAt = null; b.logStartedAt = null; b.logOverAt = null;
+      b.overrun = { solveMs: 0, logMs: 0 };
+      b.questions = ids.map(mkQ);
+      activate(b, 0, t);
+    } else if (mode === 'blurt') {
+      b = baseBlock('blurt', t, tz, String(a.label || '').trim().slice(0, 60));
+      b.config = { writeMs: K.BLURT_WRITE_MS, checkMs: K.BLURT_CHECK_MS };
+      b.phase = 'write'; b.writeStartedAt = t; b.writeEndedAt = null; b.writeEarly = false;
+      b.checkStartedAt = null; b.checkOverAt = null; b.overrunMs = 0;
+    } else if (mode === 'mock') {
+      b = baseBlock('mock', t, tz, String(a.label || '').trim().slice(0, 60));
+      b.config = { paperMs: K.PAPER_MS, breakMs: K.MOCK_BREAK_MS };
+      b.phase = 'paper1'; b.papers = [newPaper(t)];
+      b.breakStartedAt = null; b.breakOverAt = null; b.breakEndedAt = null; b.breakOverrunMs = 0;
+    } else if (mode === 'break') {
+      var bm = Number(a.breakMin);
+      if (K.BREAK_PRESETS.indexOf(bm) < 0) return false;
+      b = baseBlock('break', t, tz, null);
+      b.config = { breakMs: bm * MIN };
+      b.phase = 'break'; b.overAt = null; b.overrunMs = 0;
+    } else return false;
+    s.block = b; s.screen = 'block'; s.setupMode = null; s.setupError = null;
+    return true;
+  }
+
+  /* ---------- action handlers (return true when something was applied) ---------- */
+  function handle(s, a, t) {
+    var type = a.type;
+    if (type === 'TICK' || type === 'COPY') return false;
+    if (s.screen === 'home') {
+      if (type === 'GO_SETUP' && SETUP_MODES.indexOf(a.mode) >= 0) { s.screen = 'setup'; s.setupMode = a.mode; s.setupError = null; return true; }
+      if (type === 'START' && a.mode === 'break' && !s.block) return startBlock(s, a, t);
+      return false;
+    }
+    if (s.screen === 'setup') {
+      if (type === 'GO_HOME') { s.screen = 'home'; s.setupMode = null; s.setupError = null; return true; }
+      if (type === 'START' && a.mode === s.setupMode && !s.block) return startBlock(s, a, t);
+      return false;
+    }
+    var b = s.block; if (!b) return false;
+    var ui = b.ui;
+    if (type === 'CANCEL') { if (ui.input) { ui.input = null; return true; } return false; }
+    if (ui.input === 'abandon') {
+      if (type === 'ABANDON_CONFIRM') {
+        var lp = b.pauses[b.pauses.length - 1]; if (lp && lp.end == null) lp.end = t;
+        b.abandonedAt = t; ui.input = null; archive(s); return true;
+      }
+      return false;
+    }
+    if (isPaused(b)) {
+      if (type === 'PAUSE') { b.pauses[b.pauses.length - 1].end = t; return true; }
+      if (type === 'ABANDON') { ui.input = 'abandon'; return true; }
+      return false;
+    }
+    if (type === 'PAUSE') { if (isTimed(b) && !ui.input) { b.pauses.push({ start: t, end: null }); return true; } return false; }
+    if (type === 'ABANDON') { if (b.phase !== 'summary' && b.mode !== 'break' && !ui.input) { ui.input = 'abandon'; return true; } return false; }
+    if (b.mode === 'practice' || b.mode === 'reattempt') return hQ(s, b, a, t);
+    if (b.mode === 'blurt') return hBlurt(s, b, a, t);
+    if (b.mode === 'mock') return hMock(s, b, a, t);
+    if (b.mode === 'break') return hBreak(s, b, a, t);
+    return false;
+  }
+  function hQ(s, b, a, t) {
+    var ui = b.ui, type = a.type, q = curQ(b), txt;
+    if (ui.input === 'answer') {
+      if (type !== 'COMMIT' || !q) return false;
+      txt = String(a.text == null ? '' : a.text).trim().slice(0, K.ANSWER_MAX);
+      if (!txt) { ui.msg = 'Type a short answer first — or Esc, then B for blank.'; return true; }
+      endQuestion(b, q, 'committed', txt, t); return true;
+    }
+    if (ui.input === 'blank') { if (type === 'BLANK' && q) { endQuestion(b, q, 'blank', null, t); return true; } return false; }
+    if (ui.input === 'note') {
+      if (type !== 'SAVE_NOTE') return false;
+      txt = String(a.text == null ? '' : a.text).trim().replace(/\s+/g, ' ').slice(0, K.NOTE_MAX);
+      b.questions[b.focus].note = txt || null; ui.input = null; return true;
+    }
+    if (ui.input) return false;
+    if (q) {
+      var g = openSeg(q);
+      switch (type) {
+        case 'OPEN_ANSWER': ui.input = 'answer'; return true;
+        case 'BLANK': ui.input = 'blank'; return true;
+        case 'PEEK': if (q.peekedAt == null) { q.peekedAt = t; return true; } return false;
+        case 'CONTINUE':
+          if (b.phase === 'solve' && q.dirAt != null && q.dirChoice == null) { q.dirChoice = 'continue'; q.dirChoiceAt = t; return true; }
+          return false;
+        case 'PARK':
+          if (b.mode === 'practice' && b.phase === 'solve' && g.pass === 1) {
+            g.end = t; q.status = 'parked'; q.parkedAt = t;
+            if (q.dirAt != null && q.dirChoice == null) { q.dirChoice = 'park'; q.dirChoiceAt = t; }
+            nextQuestion(b, t); return true;
+          }
+          return false;
+      }
+      return false;
+    }
+    if (b.phase === 'solve') {
+      if (type === 'TO_LOG' && b.mode === 'practice') { enterLog(b, t); return true; }
+      return false;
+    }
+    if (b.phase !== 'log' && b.phase !== 'summary') return false;
+    var r = b.questions[b.focus];
+    switch (type) {
+      case 'FOCUS':
+        var nf = Math.max(0, Math.min(b.questions.length - 1, b.focus + (a.delta | 0)));
+        if (nf !== b.focus) { b.focus = nf; return true; } return false;
+      case 'MARK':
+        if (a.ok === true) {
+          if (r.status !== 'committed') { ui.msg = r.id + ' was not attempted — it can only be ✗.'; return true; }
+          if (r.peekedAt != null) { ui.msg = r.id + ': you peeked at a hint — it can only be ✗.'; return true; }
+          if (r.mark === 'ok') return false;
+          r.mark = 'ok'; r.tag = null; return true;
+        }
+        if (a.ok === false) { if (r.mark === 'x') return false; r.mark = 'x'; return true; }
+        return false;
+      case 'TAG':
+        if (TAGS.indexOf(a.tag) < 0) return false;
+        if (r.mark === 'x' && r.tag === a.tag) return false;
+        r.mark = 'x'; r.tag = a.tag; return true;
+      case 'OPEN_NOTE':
+        if (r.mark !== 'x') { ui.msg = 'Trigger → move notes are for ✗ questions — mark ✗ first.'; return true; }
+        ui.input = 'note'; return true;
+      case 'FINISH':
+        if (b.phase !== 'log') return false;
+        for (var i = 0; i < b.questions.length; i++) {
+          var x = b.questions[i];
+          if (x.mark == null) { b.focus = i; ui.msg = 'Can’t finish: ' + x.id + ' has no mark (Y ✓ / N ✗).'; return true; }
+          if (x.mark === 'x' && !x.tag) { b.focus = i; ui.msg = 'Can’t finish: ' + x.id + ' is ✗ and needs a tag (C/A/S/T).'; return true; }
+        }
+        b.phase = 'summary'; b.endedAt = t; b.focus = 0;
+        if (b.mode === 'practice') b.overrun.logMs = Math.max(0, active(b.pauses, b.logStartedAt, t) - b.config.logMs);
+        return true;
+      case 'NEW': if (b.phase === 'summary') { archive(s); return true; } return false;
+    }
+    return false;
+  }
+  function hBlurt(s, b, a, t) {
+    var type = a.type, ui = b.ui;
+    if (ui.input === 'endEarly') {
+      if (type === 'END_EARLY' && b.phase === 'write') {
+        ui.input = null; b.writeEndedAt = t; b.writeEarly = true; b.phase = 'check'; b.checkStartedAt = t; return true;
+      }
+      return false;
+    }
+    if (ui.input) return false;
+    if (b.phase === 'write' && type === 'END_EARLY') { ui.input = 'endEarly'; return true; }
+    if (b.phase === 'check' && type === 'FINISH') {
+      b.phase = 'summary'; b.endedAt = t; b.overrunMs = Math.max(0, active(b.pauses, b.checkStartedAt, t) - b.config.checkMs); return true;
+    }
+    if (b.phase === 'summary' && type === 'NEW') { archive(s); return true; }
+    return false;
+  }
+  function hMock(s, b, a, t) {
+    var type = a.type, ui = b.ui, paper = b.papers[b.papers.length - 1];
+    var inPaper = b.phase === 'paper1' || b.phase === 'paper2';
+    if (ui.input === 'endEarly') { if (type === 'END_EARLY' && inPaper) { ui.input = null; endPaper(b, t, true); return true; } return false; }
+    if (ui.input) return false;
+    if (inPaper) {
+      if (type === 'SECTION') {
+        if (SECS.indexOf(a.sec) < 0 || paper.sec === a.sec) return false;
+        paper.segs[paper.segs.length - 1].end = t;
+        paper.segs.push({ sec: a.sec, start: t, end: null }); paper.sec = a.sec; return true;
+      }
+      if (type === 'END_EARLY') { ui.input = 'endEarly'; return true; }
+      return false;
+    }
+    if (b.phase === 'break' && type === 'START_PAPER2') {
+      b.breakEndedAt = t; b.breakOverrunMs = Math.max(0, active(b.pauses, b.breakStartedAt, t) - b.config.breakMs);
+      b.phase = 'paper2'; b.papers.push(newPaper(t)); return true;
+    }
+    if (b.phase === 'summary' && type === 'NEW') { archive(s); return true; }
+    return false;
+  }
+  function hBreak(s, b, a, t) {
+    if (a.type === 'END_BREAK' && b.phase === 'break' && !b.ui.input) {
+      b.endedAt = t; b.overrunMs = Math.max(0, active(b.pauses, b.startedAt, t) - b.config.breakMs); b.phase = 'done';
+      archive(s); return true;
+    }
+    return false;
+  }
+
+  function sig(s) { return JSON.stringify([s.v, s.screen, s.setupMode, s.setupError, s.prefs, s.block]); }
+  function dedupe(fx) {
+    var seen = {}, out = [];
+    for (var i = 0; i < fx.length; i++) {
+      var k = fx[i].type === 'sound' ? 's:' + fx[i].name : fx[i].type === 'notify' ? 'n:' + fx[i].title : 'o:' + i;
+      if (seen[k]) continue; seen[k] = 1; out.push(fx[i]);
+    }
+    return out;
+  }
+
+  function reduce(state, action) {
+    var none = { state: state, effects: [] };
+    if (!state || !action || typeof action.type !== 'string' || KNOWN.indexOf(action.type) < 0) return none;
+    if (typeof action.t !== 'number' || !isFinite(action.t)) return none;
+    var before = sig(state);
+    var s = {};
+    for (var k in state) if (Object.prototype.hasOwnProperty.call(state, k)) s[k] = state[k];
+    s.block = clone(state.block); s.prefs = clone(state.prefs);
+    var fx = [], t = action.t;
+    if (s.block) {
+      t = Math.max(t, s.block.lastT);
+      advance(s.block, t, fx);
+    }
+    var hadMsg = s.block && s.block.ui.msg;
+    if (s.block && action.type !== 'TICK' && hadMsg) s.block.ui.msg = null;
+    var b0 = s.block;
+    var applied = handle(s, action, t);
+    if (applied && action.type !== 'TICK' && b0 && s.block === b0 && b0.phase !== 'summary' && t > b0.lastT) b0.lastT = t;
+    if (sig(s) === before && s.history === state.history) return { state: state, effects: dedupe(fx) };
+    return { state: s, effects: dedupe(fx) };
+  }
+
+  /* ---------- keys valid right now (drives legend AND key handling) ---------- */
+  function key(keys, show, label, action, hide) { return { keys: keys, show: show, label: label, action: action, hide: !!hide }; }
+  function tagKeys(label) {
+    return TAGS.map(function (g, i) { return key([g.toLowerCase()], 'C/A/S/T', label, { type: 'TAG', tag: g }, i > 0); });
+  }
+  function keysFor(s) {
+    var out = [];
+    if (s.screen === 'home') {
+      out.push(key(['1'], '1', 'practice set', { type: 'GO_SETUP', mode: 'practice' }));
+      out.push(key(['2'], '2', 're-attempt', { type: 'GO_SETUP', mode: 'reattempt' }));
+      out.push(key(['3'], '3', 'blurt', { type: 'GO_SETUP', mode: 'blurt' }));
+      out.push(key(['4'], '4', 'mock paper', { type: 'GO_SETUP', mode: 'mock' }));
+      out.push(key(['5'], '5', 'break 5', { type: 'START', mode: 'break', breakMin: 5 }));
+      out.push(key(['6'], '6', 'break 10', { type: 'START', mode: 'break', breakMin: 10 }));
+      out.push(key(['7'], '7', 'break 15', { type: 'START', mode: 'break', breakMin: 15 }));
+      return out;
+    }
+    if (s.screen === 'setup') {
+      out.push(key(['Ctrl+Enter'], 'Ctrl+Enter', 'start', { type: 'FORM_START' }));
+      out.push(key([], 'Tab', 'next field', null));
+      out.push(key(['Escape'], 'Esc', 'leave field · again = back', { type: 'GO_HOME' }));
+      return out;
+    }
+    var b = s.block; if (!b) return out;
+    var ui = b.ui;
+    var SPACE = key(['Space'], 'Space', 'pause', { type: 'PAUSE' });
+    var QUIT = key(['q'], 'Q', 'abandon', { type: 'ABANDON' });
+    if (ui.input === 'abandon') return [key(['Enter'], 'Enter', 'abandon block', { type: 'ABANDON_CONFIRM' }), key(['Escape'], 'Esc', 'keep going', { type: 'CANCEL' })];
+    if (isPaused(b)) return [key(['Space'], 'Space', 'resume', { type: 'PAUSE' }), QUIT];
+    if (ui.input === 'answer') return [key([], 'Enter', 'commit answer'), key([], 'Esc', 'cancel')];
+    if (ui.input === 'note') return [key([], 'Enter', 'save note'), key([], 'Esc', 'cancel')];
+    if (ui.input === 'blank') return [key(['b'], 'B', 'confirm BLANK', { type: 'BLANK' }), key(['Escape'], 'Esc', 'cancel', { type: 'CANCEL' })];
+    if (ui.input === 'endEarly') return [key(['f'], 'F', 'confirm', { type: 'END_EARLY' }), key(['Escape'], 'Esc', 'cancel', { type: 'CANCEL' })];
+    if (b.mode === 'practice' || b.mode === 'reattempt') {
+      var q = curQ(b);
+      if (q) {
+        var g = openSeg(q);
+        if (b.phase === 'solve' && q.dirAt != null && q.dirChoice == null) out.push(key(['c'], 'C', 'continue', { type: 'CONTINUE' }));
+        if (b.mode === 'practice' && b.phase === 'solve' && g.pass === 1) out.push(key(['p'], 'P', 'park ↩', { type: 'PARK' }));
+        out.push(key(['Enter'], 'Enter', 'commit', { type: 'OPEN_ANSWER' }));
+        out.push(key(['b'], 'B', 'blank', { type: 'BLANK' }));
+        if (q.peekedAt == null) out.push(key(['h'], 'H', 'peek / hint', { type: 'PEEK' }));
+        if (isTimed(b)) out.push(SPACE);
+        out.push(QUIT);
+        return out;
+      }
+      if (b.phase === 'solve') { out.push(key(['l'], 'L', 'go to log', { type: 'TO_LOG' }), SPACE, QUIT); return out; }
+      out.push(key(['ArrowUp', 'k'], '↑/K', 'prev', { type: 'FOCUS', delta: -1 }));
+      out.push(key(['ArrowDown', 'j'], '↓/J', 'next', { type: 'FOCUS', delta: 1 }));
+      out.push(key(['y'], 'Y', '✓', { type: 'MARK', ok: true }));
+      if (b.phase === 'log') out.push(key(['n'], 'N', '✗', { type: 'MARK', ok: false }));
+      out = out.concat(tagKeys(b.phase === 'log' ? 'tag' : 'tag (sets ✗)'));
+      var r = b.questions[b.focus];
+      if (r && r.mark === 'x') out.push(key(['Enter'], 'Enter', 'trigger → move', { type: 'OPEN_NOTE' }));
+      if (b.phase === 'log') {
+        out.push(key(['f'], 'F', 'finish log', { type: 'FINISH' }));
+        if (isTimed(b)) out.push(SPACE);
+        out.push(QUIT);
+      } else {
+        out.push(key(['x'], 'X', 'copy summary', { type: 'COPY' }));
+        out.push(key(['n'], 'N', 'new block', { type: 'NEW' }));
+      }
+      return out;
+    }
+    if (b.mode === 'blurt') {
+      if (b.phase === 'write') return [key(['f'], 'F', 'start check early', { type: 'END_EARLY' }), SPACE, QUIT];
+      if (b.phase === 'check') return [key(['f'], 'F', 'finish', { type: 'FINISH' }), SPACE, QUIT];
+      return [key(['x'], 'X', 'copy summary', { type: 'COPY' }), key(['n'], 'N', 'new block', { type: 'NEW' })];
+    }
+    if (b.mode === 'mock') {
+      if (b.phase === 'paper1' || b.phase === 'paper2') {
+        var cur = b.papers[b.papers.length - 1].sec;
+        SECS.forEach(function (x, i) { if (x !== cur) out.push(key([String(i + 1)], String(i + 1), x === 'P' ? 'Physics' : x === 'C' ? 'Chemistry' : 'Maths', { type: 'SECTION', sec: x })); });
+        out.push(key(['f'], 'F', 'end paper early', { type: 'END_EARLY' }), SPACE, QUIT);
+        return out;
+      }
+      if (b.phase === 'break') return [key(['Enter'], 'Enter', 'start Paper 2', { type: 'START_PAPER2' }), SPACE, QUIT];
+      return [key(['x'], 'X', 'copy summary', { type: 'COPY' }), key(['n'], 'N', 'new block', { type: 'NEW' })];
+    }
+    if (b.mode === 'break') return [key(['n'], 'N', 'end break → next block', { type: 'END_BREAK' }), SPACE];
+    return out;
+  }
+
+  /* ---------- view: everything the UI shows ---------- */
+  function glyph(q) {
+    return { unreached: '·', active: '●', parked: '↩', committed: '■', blank: '□' }[q.status] || '?';
+  }
+  function qTone(b, q) {
+    if (b.mode === 'practice') { if (q.doubleAt != null || q.capAt != null) return 'red'; if (q.targetAt != null) return 'amber'; }
+    else if (q.capAt != null) return 'red';
+    return '';
+  }
+  function rowsFor(b, now) {
+    return b.questions.map(function (q, i) {
+      var st = { unreached: 'not reached', active: 'open', parked: 'parked, not resolved', committed: 'committed', blank: 'blank' }[q.status];
+      var bits = [st];
+      if (q.startedAt != null) bits.push('started ' + localStamp(q.startedAt, b.tz).slice(11));
+      if (q.answer) bits.push('ans: ' + q.answer);
+      if (q.peekedAt != null) bits.push('peeked');
+      if (q.parkedAt != null && q.status !== 'parked') bits.push('was parked');
+      if (q.timedOut) bits.push('timed out');
+      return { id: q.id, focus: i === b.focus, mark: q.mark === 'ok' ? '✓' : q.mark === 'x' ? '✗' : '·', tag: q.tag,
+        note: q.note, time: fmt(qActive(b, q, now)), tone: qTone(b, q), sub: bits.join(' · '),
+        needs: q.mark == null ? 'mark' : (q.mark === 'x' && !q.tag ? 'tag' : null) };
+    });
+  }
+  function view(state, now) {
+    var v = { screen: state.screen, keys: keysFor(state), title: 'Crown Dial' };
+    v.legend = v.keys.filter(function (k) { return !k.hide; }).map(function (k) { return { show: k.show, label: k.label }; });
+    if (state.screen === 'home') {
+      v.home = { history: state.history.slice(-8).reverse().map(historyLine) };
+      return v;
+    }
+    if (state.screen === 'setup') {
+      v.setup = { mode: state.setupMode, modeName: MODE_NAMES[state.setupMode], error: state.setupError, prefs: state.prefs };
+      v.title = 'Setup · Crown Dial';
+      return v;
+    }
+    var b = state.block;
+    now = Math.max(now, b.lastT);
+    var P = b.pauses, R = { mode: b.mode, modeName: MODE_NAMES[b.mode], phase: b.phase, banners: [], info: [], clock: null,
+      strip: null, rows: null, sections: null, summary: null, summaryText: null, paused: null, prompt: null, msg: b.ui.msg, kind: '' };
+    v.run = R; v.input = null;
+    if (isPaused(b)) {
+      var lp = P[P.length - 1];
+      R.paused = { text: fmt(now - lp.start), count: P.length, totalText: fmt(pausedTotal(P, now)) };
+    }
+    if (b.ui.input === 'abandon') R.prompt = 'Abandon this block? It is recorded as abandoned in history. Enter = abandon · Esc = keep going.';
+    if (b.mode === 'practice' || b.mode === 'reattempt') viewQ(b, now, R, v);
+    else if (b.mode === 'blurt') viewBlurt(b, now, R, v);
+    else if (b.mode === 'mock') viewMock(b, now, R, v);
+    else viewBreak(b, now, R, v);
+    if (R.paused) v.title = 'PAUSED ' + R.paused.text + ' · Crown Dial';
+    R.pauseInfo = P.length ? P.length + ' pause' + (P.length > 1 ? 's' : '') + ' · ' + fmt(pausedTotal(P, now)) : null;
+    return v;
+  }
+  function pausedTotal(P, now) { var s = 0; P.forEach(function (p) { s += (p.end == null ? now : p.end) - p.start; }); return s; }
+  function viewQ(b, now, R, v) {
+    var P = b.pauses, n = b.questions.length, q = curQ(b), over = b.overtimeIdx != null;
+    R.strip = b.questions.map(function (x, i) {
+      return { id: x.id, n: i + 1, glyph: glyph(x), cur: i === b.cur, tone: qTone(b, x), peeked: x.peekedAt != null };
+    });
+    R.passText = b.mode === 'practice' ? (b.phase === 'solve' ? 'Pass ' + b.pass : b.phase === 'log' ? 'Log' : 'Summary') : (b.phase === 'solve' ? 'Single pass' : b.phase === 'log' ? 'Marking' : 'Summary');
+    if (q) {
+      var ms = qActive(b, q, now), g = openSeg(q);
+      var dirPending = b.phase === 'solve' && q.dirAt != null && q.dirChoice == null;
+      var tone = '';
+      if (q.targetAt != null || dirPending) tone = 'amber';
+      if ((b.mode === 'practice' && q.doubleAt != null) || q.capAt != null || over) tone = 'red';
+      R.kind = 'question';
+      R.q = { id: q.id, pos: (b.cur + 1) + '/' + n, pass: g.pass, peeked: q.peekedAt != null };
+      R.clock = { text: fmt(ms), tone: tone, label: 'question' };
+      v.title = fmt(ms) + ' · ' + q.id + ' ' + R.q.pos + ' · Crown Dial';
+      if (over) R.banners.push({ tone: 'red', text: 'Solve time over — finish this now. Commit (Enter) or blank (B); the time is recorded as overrun.' });
+      if (dirPending) R.banners.push({ tone: 'amber', text: 'Direction? — C continue · P park ↩' });
+      if (q.capAt != null) R.banners.push({ tone: 'red', text: (b.mode === 'practice' ? '5:00' : '10:00') + ' cap reached — the only way out is commit (Enter) or blank (B).' });
+      if (b.mode === 'practice') {
+        if (q.doubleAt != null) R.banners.push({ tone: 'red', text: '2× target (' + fmt(2 * b.config.targetMs) + ') — decide: commit or blank. Nagging every 30 s.' });
+        else if (q.targetAt != null) R.banners.push({ tone: 'amber', text: 'Past target pace (' + fmt(b.config.targetMs) + ').' });
+      }
+      if (g.pass === 2 && b.phase === 'solve' && q.capAt == null) R.banners.push({ tone: '', text: 'Pass 2 — parked questions only, 5:00 cap each, ends in commit or blank.' });
+      if (q.peekedAt != null) R.banners.push({ tone: '', text: 'Peeked — this question can only be marked ✗.' });
+      if (b.mode === 'practice') {
+        if (b.phase === 'solve') R.info.push({ label: 'Solve left', text: cd(b.config.solveMs - active(P, b.solveStartedAt, now)).text, tone: '' });
+        else {
+          R.info.push({ label: 'Solve overrun', text: '+' + fmt(active(P, b.solveEndedAt, now)), tone: 'red' });
+          var lr = cd(b.config.logMs - active(P, b.logStartedAt, now));
+          R.info.push({ label: 'Log left', text: lr.text, tone: lr.over ? 'red' : '' });
+        }
+        R.info.push({ label: 'Target', text: fmt(b.config.targetMs), tone: '' });
+        if (g.pass === 2) { var c2 = cd(K.PASS2_CAP_MS - active(P, g.start, now)); R.info.push({ label: 'Cap', text: c2.text, tone: c2.over ? 'red' : '' }); }
+      } else {
+        var c3 = cd(b.config.capMs - ms); R.info.push({ label: 'Cap', text: c3.text, tone: c3.over ? 'red' : '' });
+      }
+      if (b.ui.input === 'answer') v.input = { kind: 'answer', key: 'answer' + b.cur, label: 'Answer for ' + q.id + ' (short; Enter commits, Esc cancels)', placeholder: 'e.g. 3, (B), 2√3 …', max: K.ANSWER_MAX, submit: 'COMMIT', value: '' };
+      if (b.ui.input === 'blank') R.prompt = 'Blank ' + q.id + '? Press B again to confirm — Esc to go back.';
+      return;
+    }
+    if (b.phase === 'solve') {
+      R.kind = 'allDone';
+      R.clock = { text: cd(b.config.solveMs - active(P, b.solveStartedAt, now)).text, tone: '', label: 'solve time left (unused)' };
+      R.banners.push({ tone: '', text: 'Every question is resolved. Press L to start the log countdown (unused solve time is not carried over).' });
+      v.title = 'Done · L for log · Crown Dial';
+      return;
+    }
+    R.kind = b.phase;
+    R.rows = rowsFor(b, now);
+    if (b.phase === 'log') {
+      if (b.mode === 'practice') {
+        var lr2 = cd(b.config.logMs - active(P, b.logStartedAt, now));
+        R.clock = { text: lr2.text, tone: lr2.over ? 'red' : '', label: lr2.over ? 'log overrun' : 'log time left' };
+        if (lr2.over) R.banners.push({ tone: 'red', text: 'Log time over — overrun is being recorded. Finish with F.' });
+        if (b.overrun.solveMs) R.info.push({ label: 'Solve overrun', text: '+' + fmt(b.overrun.solveMs), tone: 'red' });
+        v.title = (lr2.over ? 'Log +' : 'Log ') + lr2.text.replace('+', '') + ' · Crown Dial';
+      } else { v.title = 'Marking · Crown Dial'; }
+      var miss = R.rows.filter(function (r) { return r.needs; }).length;
+      R.info.push({ label: 'Still to mark/tag', text: String(miss), tone: '' });
+    } else {
+      R.summary = summary(b); R.summaryText = summaryText(b); v.title = 'Summary · Crown Dial';
+    }
+    if (b.ui.input === 'note') {
+      var r = b.questions[b.focus];
+      v.input = { kind: 'note', key: 'note' + b.focus, label: r.id + ' — trigger → move (one line; Enter saves, Esc cancels)', placeholder: 'e.g. saw “rolling” → write the no-slip condition first', max: K.NOTE_MAX, submit: 'SAVE_NOTE', value: r.note || '' };
+    }
+  }
+  function viewBlurt(b, now, R, v) {
+    var P = b.pauses;
+    R.kind = 'blurt'; R.q = { id: b.label || 'Blurt', pos: '', pass: 0, peeked: false };
+    if (b.phase === 'write') {
+      var w = cd(b.config.writeMs - active(P, b.writeStartedAt, now));
+      R.clock = { text: w.text, tone: '', label: 'write' }; R.info.push({ label: 'Then', text: 'check 5:00', tone: '' });
+      v.title = 'Write ' + w.text + ' · Crown Dial';
+      if (b.ui.input === 'endEarly') R.prompt = 'Stop writing and start the 5:00 check now? F again to confirm — Esc to go back.';
+    } else if (b.phase === 'check') {
+      var c = cd(b.config.checkMs - active(P, b.checkStartedAt, now));
+      R.clock = { text: c.text, tone: c.over ? 'red' : '', label: c.over ? 'check overrun' : 'check' };
+      R.info.push({ label: 'Wrote', text: fmt(active(P, b.writeStartedAt, b.writeEndedAt)), tone: '' });
+      if (c.over) R.banners.push({ tone: 'red', text: 'Check time over — overrun is being recorded. F to finish.' });
+      v.title = 'Check ' + c.text + ' · Crown Dial';
+    } else { R.kind = 'summary'; R.summary = summary(b); R.summaryText = summaryText(b); v.title = 'Summary · Crown Dial'; }
+  }
+  function viewMock(b, now, R, v) {
+    var P = b.pauses, paper = b.papers[b.papers.length - 1];
+    R.kind = 'mock';
+    if (b.phase === 'paper1' || b.phase === 'paper2') {
+      var rem = cd(b.config.paperMs - active(P, paper.startedAt, now));
+      var t = secTimes(b, paper, now);
+      R.q = { id: (b.label ? b.label + ' · ' : '') + 'Paper ' + b.papers.length, pos: '', pass: 0, peeked: false };
+      R.clock = { text: rem.text, tone: '', label: 'paper time left' };
+      R.sections = SECS.map(function (x) { return { sec: x, ms: t[x], text: fmt(t[x]), on: paper.sec === x }; });
+      v.title = rem.text + ' · P' + b.papers.length + ' ' + paper.sec + ' · Crown Dial';
+      if (b.ui.input === 'endEarly') R.prompt = 'End Paper ' + b.papers.length + ' now? F again to confirm — Esc to go back.';
+    } else if (b.phase === 'break') {
+      var br = cd(b.config.breakMs - active(P, b.breakStartedAt, now));
+      R.q = { id: 'Break between papers', pos: '', pass: 0, peeked: false };
+      R.clock = { text: br.text, tone: br.over ? 'red' : '', label: br.over ? 'break overrun' : 'break left' };
+      if (br.over) R.banners.push({ tone: 'red', text: 'Break over — Enter starts Paper 2. Overrun is being recorded.' });
+      v.title = 'Break ' + br.text + ' · Crown Dial';
+    } else { R.kind = 'summary'; R.summary = summary(b); R.summaryText = summaryText(b); v.title = 'Summary · Crown Dial'; }
+  }
+  function viewBreak(b, now, R, v) {
+    var c = cd(b.config.breakMs - active(b.pauses, b.startedAt, now));
+    R.kind = 'break'; R.q = { id: 'Break · ' + fmt(b.config.breakMs), pos: '', pass: 0, peeked: false };
+    R.clock = { text: c.text, tone: c.over ? 'red' : '', label: c.over ? 'break overrun' : 'break left' };
+    if (c.over) R.banners.push({ tone: 'red', text: 'Break over — press N and start the next block. Overrun is being recorded.' });
+    v.title = 'Break ' + c.text + ' · Crown Dial';
+  }
+  function secTimes(b, paper, now) {
+    var t = { P: 0, C: 0, M: 0 };
+    paper.segs.forEach(function (g) { t[g.sec] += active(b.pauses, g.start, g.end == null ? now : g.end); });
+    return t;
+  }
+
+  /* ---------- summary ---------- */
+  function endOf(b) { return b.endedAt != null ? b.endedAt : b.abandonedAt != null ? b.abandonedAt : b.lastT; }
+  function summary(x) {
+    var b = x && x.screen !== undefined && x.history !== undefined ? x.block : x;
+    if (!b) return null;
+    var endT = endOf(b), P = b.pauses;
+    var plist = P.map(function (p) { var e = p.end == null ? endT : p.end; return { start: p.start, end: e, ms: e - p.start }; });
+    var out = { mode: b.mode, modeName: MODE_NAMES[b.mode], label: b.label, startedAt: b.startedAt, endedAt: b.endedAt,
+      startLocal: localStamp(b.startedAt, b.tz), abandoned: b.abandonedAt != null,
+      pauses: { count: plist.length, totalMs: plist.reduce(function (a, p) { return a + p.ms; }, 0), list: plist } };
+    if (b.mode === 'practice' || b.mode === 'reattempt') {
+      var qs = b.questions.map(function (q) {
+        return { id: q.id, ms: qActive(b, q, endT), status: q.status, mark: q.mark, tag: q.tag, note: q.note, answer: q.answer,
+          peeked: q.peekedAt != null, parked: q.parkedAt != null, timedOut: q.timedOut, overTarget: q.targetAt != null, overCap: q.capAt != null };
+      });
+      out.size = qs.length;
+      out.correct = qs.filter(function (q) { return q.mark === 'ok'; }).length;
+      out.attempted = qs.filter(function (q) { return q.status === 'committed'; }).length;
+      out.tally = { C: 0, A: 0, S: 0, T: 0 };
+      qs.forEach(function (q) { if (q.mark === 'x' && q.tag) out.tally[q.tag]++; });
+      out.parkedCount = qs.filter(function (q) { return q.parked; }).length;
+      if (b.mode === 'practice') {
+        var ot = qs.filter(function (q) { return q.overTarget; });
+        out.overTarget = { targetMs: b.config.targetMs, count: ot.length, ids: ot.map(function (q) { return q.id; }) };
+        out.config = { blockMin: b.config.blockMin, solveMs: b.config.solveMs, logMs: b.config.logMs };
+      } else {
+        var oc = qs.filter(function (q) { return q.overCap; });
+        out.overCap = { capMs: b.config.capMs, count: oc.length, ids: oc.map(function (q) { return q.id; }) };
+      }
+      var longest = null;
+      qs.forEach(function (q) { if (!longest || q.ms > longest.ms) longest = q; });
+      out.longest = longest ? { id: longest.id, ms: longest.ms, text: fmt(longest.ms) } : null;
+      out.wrong = qs.filter(function (q) { return q.mark === 'x'; }).map(function (q) { return { id: q.id, tag: q.tag, note: q.note }; });
+      out.unattempted = qs.filter(function (q) { return q.status === 'blank' || q.status === 'unreached' || q.status === 'parked'; }).map(function (q) { return q.id; });
+      out.overrun = { solveMs: b.overrun.solveMs, logMs: b.overrun.logMs };
+      var ids = out.wrong.map(function (w) { return w.id; });
+      var base = b.startedAt + b.tz * MIN;
+      out.reattempt = { plus2: { date: isoDay(base + 2 * DAY), ids: ids.slice() }, plus7: { date: isoDay(base + 7 * DAY), ids: ids.slice() } };
+      out.questions = qs;
+    } else if (b.mode === 'blurt') {
+      out.writeMs = active(P, b.writeStartedAt, b.writeEndedAt != null ? b.writeEndedAt : endT);
+      out.writeEarly = b.writeEarly;
+      out.checkMs = b.checkStartedAt != null ? active(P, b.checkStartedAt, endT) : 0;
+      out.overrunMs = b.overrunMs;
+    } else if (b.mode === 'mock') {
+      out.papers = b.papers.map(function (p, i) {
+        var t = secTimes(b, p, p.endedAt != null ? p.endedAt : endT);
+        return { n: i + 1, sections: t, totalMs: t.P + t.C + t.M, early: p.early };
+      });
+      out.breakMs = b.breakStartedAt != null ? active(P, b.breakStartedAt, b.breakEndedAt != null ? b.breakEndedAt : endT) : 0;
+      out.breakOverrunMs = b.breakOverrunMs;
+    } else if (b.mode === 'break') {
+      out.plannedMs = b.config.breakMs;
+      out.actualMs = active(P, b.startedAt, endT);
+      out.overrunMs = b.overrunMs;
+    }
+    return out;
+  }
+  function summaryText(x) {
+    var s = summary(x); if (!s) return '';
+    var L = [];
+    L.push('Crown Dial — ' + s.modeName + (s.label ? ' · ' + s.label : '') + ' · ' + s.startLocal + (s.abandoned ? ' (ABANDONED)' : ''));
+    if (s.mode === 'practice' || s.mode === 'reattempt') {
+      if (s.config) L.push('Block ' + s.config.blockMin + ' min (solve ' + fmt(s.config.solveMs) + ' + log ' + fmt(s.config.logMs) + ')');
+      L.push('✓ ' + s.correct + ' / attempted ' + s.attempted + ' / set ' + s.size);
+      L.push('Tags: C ' + s.tally.C + ' · A ' + s.tally.A + ' · S ' + s.tally.S + ' · T ' + s.tally.T);
+      L.push('Parked: ' + s.parkedCount);
+      if (s.overTarget) L.push('Over target (' + fmt(s.overTarget.targetMs) + '): ' + s.overTarget.count + (s.overTarget.count ? ' — ' + s.overTarget.ids.join(', ') : ''));
+      if (s.overCap) L.push('Hit 10:00 cap: ' + s.overCap.count + (s.overCap.count ? ' — ' + s.overCap.ids.join(', ') : ''));
+      if (s.longest) L.push('Longest: ' + s.longest.id + ' ' + s.longest.text);
+      L.push('✗ (' + s.wrong.length + '):');
+      s.wrong.forEach(function (w) { L.push('  ' + w.id + ' [' + (w.tag || '?') + ']' + (w.note ? ' ' + w.note : '')); });
+      L.push('Unattempted: ' + (s.unattempted.length ? s.unattempted.join(', ') : 'none'));
+      L.push('Pauses: ' + s.pauses.count + ' · ' + fmt(s.pauses.totalMs) + ' total');
+      L.push('Overrun: solve +' + fmt(s.overrun.solveMs) + ' · log +' + fmt(s.overrun.logMs));
+      L.push('Re-attempt +2 days (' + s.reattempt.plus2.date + '): ' + (s.reattempt.plus2.ids.join(', ') || 'none'));
+      L.push('Re-attempt +7 days (' + s.reattempt.plus7.date + '): ' + (s.reattempt.plus7.ids.join(', ') || 'none'));
+      L.push('Times: ' + s.questions.map(function (q) { return q.id + ' ' + fmt(q.ms) + ' ' + (q.mark === 'ok' ? '✓' : q.mark === 'x' ? '✗' : '·'); }).join(' | '));
+    } else if (s.mode === 'blurt') {
+      L.push('Write ' + fmt(s.writeMs) + (s.writeEarly ? ' (ended early)' : '') + ' · check ' + fmt(s.checkMs) + ' · overrun +' + fmt(s.overrunMs));
+      L.push('Pauses: ' + s.pauses.count + ' · ' + fmt(s.pauses.totalMs) + ' total');
+    } else if (s.mode === 'mock') {
+      s.papers.forEach(function (p) {
+        L.push('Paper ' + p.n + ': P ' + fmt(p.sections.P) + ' · C ' + fmt(p.sections.C) + ' · M ' + fmt(p.sections.M) + ' · total ' + fmt(p.totalMs) + (p.early ? ' (ended early)' : ''));
+      });
+      L.push('Break: ' + fmt(s.breakMs) + ' · overrun +' + fmt(s.breakOverrunMs));
+      L.push('Pauses: ' + s.pauses.count + ' · ' + fmt(s.pauses.totalMs) + ' total');
+    } else if (s.mode === 'break') {
+      L.push('Break ' + fmt(s.plannedMs) + ' · took ' + fmt(s.actualMs) + ' · overrun +' + fmt(s.overrunMs));
+    }
+    return L.join('\n');
+  }
+  function historyLine(b) {
+    var s = summary(b), d = s.startLocal, x = '';
+    if (s.mode === 'practice' || s.mode === 'reattempt') x = '✓' + s.correct + '/' + s.attempted + '/' + s.size + ' · ✗ ' + s.wrong.length;
+    else if (s.mode === 'blurt') x = 'write ' + fmt(s.writeMs) + ' · overrun +' + fmt(s.overrunMs);
+    else if (s.mode === 'mock') x = s.papers.map(function (p) { return 'P' + p.n + ' ' + fmt(p.totalMs); }).join(' · ');
+    else if (s.mode === 'break') x = fmt(s.plannedMs) + ' · overrun +' + fmt(s.overrunMs);
+    return { date: d, mode: s.modeName, text: (s.abandoned ? 'abandoned · ' : '') + x };
+  }
+
+  return { initial: initial, reduce: reduce, view: view, summary: summary, summaryText: summaryText,
+    splits: splits, parseIds: parseIds, fmt: fmt, isValidState: isValidState, active: active, atActive: atActive,
+    K: K, TAGS: TAGS, MODE_NAMES: MODE_NAMES };
+})();
+</script>
+
+<script id="selftest">
+/* Crown Dial — SelfTest: drives Core with synthetic timestamps only. Node-runnable. */
+globalThis.SelfTest = (function () {
+  'use strict';
+  var C = globalThis.Core, MIN = 60000, SEC = 1000;
+  var T0 = Date.UTC(2026, 10, 13, 3, 30, 0); // 09:00 IST
+  function R(s, a) { return C.reduce(s, a).state; }
+  function RX(s, a) { return C.reduce(s, a); }
+  function deq(a, b) {
+    if (a === b) return true;
+    if (typeof a !== typeof b || a === null || b === null || typeof a !== 'object') return false;
+    if (Array.isArray(a) !== Array.isArray(b)) return false;
+    var ka = Object.keys(a), kb = Object.keys(b);
+    if (ka.length !== kb.length) return false;
+    for (var i = 0; i < ka.length; i++) if (!Object.prototype.hasOwnProperty.call(b, ka[i]) || !deq(a[ka[i]], b[ka[i]])) return false;
+    return true;
+  }
+  function jsonExact(s) { return deq(JSON.parse(JSON.stringify(s)), s); }
+  function practice(opts) {
+    opts = opts || {};
+    var s = C.initial();
+    s = R(s, { type: 'GO_SETUP', mode: 'practice', t: T0 });
+    return R(s, { type: 'START', mode: 'practice', idsText: opts.ids || '10', blockMin: opts.blockMin || 90, blockChoice: opts.choice || String(opts.blockMin || 90),
+      targetMin: opts.targetMin || 4.5, tz: opts.tz == null ? 330 : opts.tz, t: opts.t0 || T0 });
+  }
+  function commit(s, t, text) { s = R(s, { type: 'OPEN_ANSWER', t: t }); return R(s, { type: 'COMMIT', text: text || '1', t: t }); }
+  function blank(s, t) { s = R(s, { type: 'BLANK', t: t }); return R(s, { type: 'BLANK', t: t }); }
+  function hasSound(fx, n) { return fx.some(function (e) { return e.type === 'sound' && e.name === n; }); }
+  function q(s, i) { return s.block.questions[i]; }
+
+  var tests = [];
+  function test(name, fn) { tests.push({ name: name, fn: fn }); }
+
+  test('1 direction alert fires exactly once at 2:00, not at 1:59.999', function () {
+    var s = practice(), r;
+    r = RX(s, { type: 'TICK', t: T0 + 119999 }); s = r.state;
+    if (q(s, 0).dirAt !== null || r.effects.length) return 'fired early';
+    r = RX(s, { type: 'TICK', t: T0 + 120000 }); s = r.state;
+    if (q(s, 0).dirAt !== T0 + 120000) return 'dirAt=' + q(s, 0).dirAt;
+    if (!hasSound(r.effects, 'direction') || !r.effects.some(function (e) { return e.type === 'notify' && e.title === 'Direction?'; })) return 'no sound/notify';
+    r = RX(s, { type: 'TICK', t: T0 + 125000 });
+    if (hasSound(r.effects, 'direction')) return 'fired twice';
+    var v = C.view(r.state, T0 + 125000);
+    if (!v.run.banners.some(function (x) { return /Direction\?/.test(x.text); })) return 'banner missing';
+    s = R(r.state, { type: 'CONTINUE', t: T0 + 126000 });
+    if (q(s, 0).dirChoice !== 'continue') return 'continue not recorded';
+    v = C.view(s, T0 + 126000);
+    if (v.run.banners.some(function (x) { return /Direction\?/.test(x.text); })) return 'banner stays after C';
+    if (q(s, 0).status !== 'active') return 'C advanced the question';
+    return true;
+  });
+
+  test('2 park → pass-2 order and 5:00 cap alert, no park in pass 2, no auto-advance', function () {
+    var s = practice(), t = T0;
+    s = R(s, { type: 'PARK', t: t += 30 * SEC });          // Q1 parked
+    s = commit(s, t += 30 * SEC);                            // Q2
+    s = R(s, { type: 'PARK', t: t += 30 * SEC });          // Q3 parked
+    for (var i = 3; i < 10; i++) s = commit(s, t += 30 * SEC);
+    if (s.block.pass !== 2 || s.block.cur !== 0) return 'pass2 should start at Q1, got pass ' + s.block.pass + ' cur ' + s.block.cur;
+    if (q(s, 0).segments.length !== 2 || q(s, 0).segments[1].pass !== 2) return 'segments wrong';
+    var p = RX(s, { type: 'PARK', t: t + 1000 });
+    if (p.state !== s) return 'park allowed in pass 2';
+    s = commit(s, t += 60 * SEC);
+    if (s.block.cur !== 2) return 'next parked should be Q3, cur=' + s.block.cur;
+    var st = t, r = RX(s, { type: 'TICK', t: st + 5 * MIN - 1 });
+    if (r.state.block.questions[2].capAt !== null) return 'cap early';
+    r = RX(r.state, { type: 'TICK', t: st + 5 * MIN });
+    if (r.state.block.questions[2].capAt !== st + 5 * MIN || !hasSound(r.effects, 'cap')) return 'cap not at 5:00';
+    var v = C.view(r.state, st + 5 * MIN + 1000);
+    if (v.run.clock.tone !== 'red' || !v.run.banners.some(function (b) { return /cap reached/.test(b.text); })) return 'cap not red/banner';
+    s = R(r.state, { type: 'TICK', t: st + 20 * MIN });
+    if (s.block.cur !== 2 || q(s, 2).status !== 'active') return 'auto-advanced after cap';
+    return true;
+  });
+
+  test('3 solve/log splits 90/60/45/custom(30, 50)', function () {
+    var cases = [[90, 75, 15], [60, 50, 10], [45, 37, 8], [30, 25, 5], [50, 42, 8]];
+    for (var i = 0; i < cases.length; i++) {
+      var c = cases[i], sp = C.splits(c[0]);
+      if (sp.solveMin !== c[1] || sp.logMin !== c[2]) return c[0] + ' → ' + sp.solveMin + '+' + sp.logMin;
+      var s = practice({ blockMin: c[0], choice: c[0] === 30 || c[0] === 50 ? 'custom' : String(c[0]) });
+      if (s.block.config.solveMs !== c[1] * MIN || s.block.config.logMs !== c[2] * MIN) return 'block config wrong for ' + c[0];
+    }
+    return true;
+  });
+
+  test('4 solve timeout → unreached & parked become ✗ T; open question finishable with overrun', function () {
+    var s = practice({ blockMin: 60 }), t = T0;
+    s = R(s, { type: 'PARK', t: t += MIN });   // Q1 parked
+    s = commit(s, t += MIN);                     // Q2 committed; Q3 opens at T0+2m
+    var r = RX(s, { type: 'TICK', t: T0 + 50 * MIN + 5000 }); s = r.state;
+    var b = s.block;
+    if (b.phase !== 'log' || b.logStartedAt !== T0 + 50 * MIN || b.solveEndedAt !== T0 + 50 * MIN) return 'log not at scheduled instant: ' + b.logStartedAt;
+    if (!hasSound(r.effects, 'loud')) return 'no loud alert';
+    if (q(s, 0).mark !== 'x' || q(s, 0).tag !== 'T') return 'parked not ✗T';
+    for (var i = 3; i < 10; i++) if (q(s, i).mark !== 'x' || q(s, i).tag !== 'T' || q(s, i).status !== 'unreached') return 'unreached Q' + (i + 1) + ' not ✗T';
+    if (q(s, 2).status !== 'active' || b.overtimeIdx !== 2) return 'open question not kept open';
+    var v = C.view(s, T0 + 50 * MIN + 5000);
+    if (v.keys.some(function (k) { return k.action && k.action.type === 'PARK'; })) return 'park offered in overtime';
+    if (!v.run.banners.some(function (x) { return /Solve time over/.test(x.text); }) || v.run.clock.tone !== 'red') return 'overtime screen missing';
+    if (R(s, { type: 'PARK', t: T0 + 51 * MIN }).block.questions[2].status !== 'active') return 'park worked in overtime';
+    if (R(s, { type: 'FINISH', t: T0 + 51 * MIN }).block.phase !== 'log') return 'finish while open';
+    s = commit(s, T0 + 51.5 * MIN, '42');
+    if (s.block.overrun.solveMs !== 90000) return 'overrun ' + s.block.overrun.solveMs;
+    if (q(s, 2).status !== 'committed' || s.block.cur !== -1) return 'not committed';
+    v = C.view(s, T0 + 51.5 * MIN);
+    if (v.run.clock.text !== '8:30') return 'log countdown should be 8:30, got ' + v.run.clock.text;
+    s = R(s, { type: 'TAG', tag: 'C', t: T0 + 52 * MIN });
+    if (q(s, 0).tag !== 'C') return 'T tag not editable';
+    return true;
+  });
+
+  function scenario() {
+    var t = T0, A = [];
+    A.push({ type: 'TICK', t: t + 130 * SEC }, { type: 'CONTINUE', t: t + 131 * SEC }, { type: 'PARK', t: t + 150 * SEC });
+    A.push({ type: 'PEEK', t: t + 200 * SEC }, { type: 'TICK', t: t + 500 * SEC }, { type: 'OPEN_ANSWER', t: t + 560 * SEC }, { type: 'COMMIT', text: '7', t: t + 561 * SEC });
+    A.push({ type: 'PAUSE', t: t + 600 * SEC }, { type: 'TICK', t: t + 650 * SEC }, { type: 'PAUSE', t: t + 700 * SEC });
+    A.push({ type: 'OPEN_ANSWER', t: t + 800 * SEC }, { type: 'COMMIT', text: '2', t: t + 800 * SEC }, { type: 'BLANK', t: t + 810 * SEC }, { type: 'BLANK', t: t + 811 * SEC });
+    for (var i = 0; i < 4; i++) A.push({ type: 'OPEN_ANSWER', t: t + (900 + i * 100) * SEC }, { type: 'COMMIT', text: 'a' + i, t: t + (900 + i * 100) * SEC });
+    A.push({ type: 'TICK', t: t + 90 * MIN }, { type: 'OPEN_ANSWER', t: t + 91 * MIN }, { type: 'COMMIT', text: 'late', t: t + 92 * MIN });
+    A.push({ type: 'MARK', ok: true, t: t + 93 * MIN }, { type: 'FOCUS', delta: 1, t: t + 93 * MIN }, { type: 'TAG', tag: 'A', t: t + 94 * MIN });
+    A.push({ type: 'TICK', t: t + 120 * MIN });
+    return A;
+  }
+  function runAll(s, A) { for (var i = 0; i < A.length; i++) s = R(s, A[i]); return s; }
+
+  test('5 resume: JSON round-trip mid-run then continue == uninterrupted run', function () {
+    var A = scenario(), s0 = practice();
+    var full = runAll(s0, A);
+    for (var cut = 1; cut < A.length; cut += 3) {
+      var mid = runAll(s0, A.slice(0, cut));
+      var resumed = JSON.parse(JSON.stringify(mid));
+      if (!jsonExact(mid)) return 'state not JSON-exact at ' + cut;
+      var end = runAll(resumed, A.slice(cut));
+      if (!deq(end, full)) return 'diverged when cut at ' + cut;
+    }
+    if (!jsonExact(full)) return 'final state not JSON-exact';
+    if (full.block.phase !== 'log') return 'scenario did not reach log';
+    return true;
+  });
+
+  test('6 pause accounting: excluded from question & solve clocks, logged, totalled, no alerts', function () {
+    var s = practice(), r;
+    s = R(s, { type: 'TICK', t: T0 + 60 * SEC });
+    s = R(s, { type: 'PAUSE', t: T0 + 60 * SEC });
+    r = RX(s, { type: 'TICK', t: T0 + 10 * MIN });
+    if (r.effects.length || q(r.state, 0).dirAt !== null || r.state.block.questions[0].targetAt !== null) return 'alert fired while paused';
+    var v = C.view(r.state, T0 + 10 * MIN);
+    if (!v.run.paused || v.run.paused.text !== '9:00') return 'pause display wrong';
+    if (R(r.state, { type: 'OPEN_ANSWER', t: T0 + 10 * MIN }).block.ui.input !== null) return 'commit allowed while paused';
+    s = R(r.state, { type: 'PAUSE', t: T0 + 10 * MIN });
+    var b = s.block;
+    if (b.pauses.length !== 1 || b.pauses[0].start !== T0 + 60 * SEC || b.pauses[0].end !== T0 + 10 * MIN) return 'pause not logged';
+    v = C.view(s, T0 + 10 * MIN + 30 * SEC);
+    if (v.run.clock.text !== '1:30') return 'question clock ' + v.run.clock.text;
+    var solveLeft = v.run.info.filter(function (x) { return x.label === 'Solve left'; })[0].text;
+    if (solveLeft !== '1:13:30') return 'solve left ' + solveLeft; // 75:00 − 1:30 active, h:mm:ss format
+    r = RX(s, { type: 'TICK', t: T0 + 11 * MIN });
+    if (q(r.state, 0).dirAt !== T0 + 11 * MIN) return 'direction should be at 11:00 wall, got ' + (q(r.state, 0).dirAt - T0);
+    s = r.state;
+    s = R(s, { type: 'PAUSE', t: T0 + 12 * MIN }); s = R(s, { type: 'PAUSE', t: T0 + 13 * MIN });
+    var sm = C.summary(s);
+    if (sm.pauses.count !== 2 || sm.pauses.totalMs !== 10 * MIN) return 'total ' + sm.pauses.totalMs;
+    // solve end shifted by the 10 paused minutes
+    r = RX(s, { type: 'TICK', t: T0 + 85 * MIN - 1 });
+    if (r.state.block.phase !== 'solve') return 'solve ended early';
+    r = RX(r.state, { type: 'TICK', t: T0 + 85 * MIN });
+    if (r.state.block.phase !== 'log' || r.state.block.solveEndedAt !== T0 + 85 * MIN) return 'solve end not shifted by pauses';
+    return true;
+  });
+
+  test('7 catch-up: one big TICK == 4800 ticks of 250 ms (deep-equal)', function () {
+    var a = practice({ targetMin: 2.5 }), b = a;
+    for (var t = T0 + 250; t <= T0 + 20 * MIN; t += 250) b = R(b, { type: 'TICK', t: t });
+    var big = RX(a, { type: 'TICK', t: T0 + 20 * MIN });
+    if (!deq(big.state, b)) return 'states differ';
+    var qq = q(b, 0);
+    if (qq.dirAt !== T0 + 2 * MIN || qq.targetAt !== T0 + 2.5 * MIN || qq.doubleAt !== T0 + 5 * MIN || qq.nags !== 30) return 'thresholds wrong: nags=' + qq.nags;
+    if (big.effects.filter(function (e) { return e.type === 'sound' && e.name === 'nag'; }).length !== 1) return 'nag effects not collapsed';
+    // also across solve end and log end
+    var c = practice({ blockMin: 45 }), d = c;
+    for (t = T0 + 1000; t <= T0 + 50 * MIN; t += 1000) d = R(d, { type: 'TICK', t: t });
+    if (!deq(R(c, { type: 'TICK', t: T0 + 50 * MIN }), d)) return 'differs across solve/log end';
+    if (d.block.logOverAt !== T0 + 45 * MIN) return 'log end ' + (d.block.logOverAt - T0);
+    return true;
+  });
+
+  test('8 peeked question refuses ✓ (with a reason)', function () {
+    var s = practice(), t = T0;
+    s = R(s, { type: 'PEEK', t: t += 10 * SEC });
+    if (!C.view(s, t).run.q.peeked) return 'no visible marker';
+    for (var i = 0; i < 10; i++) s = commit(s, t += 30 * SEC);
+    s = R(s, { type: 'TO_LOG', t: t += SEC });
+    if (s.block.phase !== 'log') return 'not in log';
+    if (q(s, 0).mark !== 'x') return 'peeked not preset ✗';
+    s = R(s, { type: 'MARK', ok: true, t: t += SEC });
+    if (q(s, 0).mark !== 'x' || !/peeked/.test(s.block.ui.msg)) return '✓ accepted or no reason';
+    s = R(s, { type: 'FOCUS', delta: 1, t: t += SEC });
+    s = R(s, { type: 'MARK', ok: true, t: t += SEC });
+    if (q(s, 1).mark !== 'ok') return 'normal ✓ failed';
+    return true;
+  });
+
+  test('9 no way to leave a question except commit/blank', function () {
+    var s = practice(), t = T0 + 30 * SEC;
+    var junk = ['SKIP', 'NEXT', 'ADVANCE', 'SET_TIME', 'EDIT'];
+    for (var i = 0; i < junk.length; i++) if (RX(s, { type: junk[i], t: t }).state !== s) return junk[i] + ' changed state';
+    var known = [{ type: 'TO_LOG' }, { type: 'FOCUS', delta: 1 }, { type: 'COMMIT', text: 'x' }, { type: 'MARK', ok: true }, { type: 'FINISH' },
+      { type: 'END_EARLY' }, { type: 'SECTION', sec: 'C' }, { type: 'NEW' }, { type: 'CONTINUE' }, { type: 'SAVE_NOTE', text: 'x' }, { type: 'START_PAPER2' }];
+    for (i = 0; i < known.length; i++) {
+      var a = known[i]; a.t = t;
+      var x = R(s, a);
+      if (x.block.cur !== 0 || q(x, 0).status !== 'active' || q(x, 0).segments[0].end !== null) return a.type + ' left the question';
+    }
+    var e = R(R(s, { type: 'OPEN_ANSWER', t: t }), { type: 'COMMIT', text: '   ', t: t });
+    if (q(e, 0).status !== 'active' || !e.block.ui.msg) return 'empty commit accepted';
+    var one = R(s, { type: 'BLANK', t: t });
+    if (q(one, 0).status !== 'active') return 'single B blanked';
+    one = R(one, { type: 'CANCEL', t: t });
+    if (q(one, 0).status !== 'active' || one.block.ui.input !== null) return 'cancel broken';
+    var late = R(s, { type: 'TICK', t: T0 + 74 * MIN });
+    if (late.block.cur !== 0 || q(late, 0).status !== 'active') return 'auto-advanced';
+    return true;
+  });
+
+  test('10 target soft alert, 2× target red + nag every 30 s', function () {
+    var s = practice(), r;
+    r = RX(s, { type: 'TICK', t: T0 + 270 * SEC - 1 });
+    if (q(r.state, 0).targetAt !== null || hasSound(r.effects, 'soft')) return 'soft early';
+    r = RX(r.state, { type: 'TICK', t: T0 + 270 * SEC });
+    if (q(r.state, 0).targetAt !== T0 + 270 * SEC || !hasSound(r.effects, 'soft')) return 'no soft at 4:30';
+    if (C.view(r.state, T0 + 271 * SEC).run.clock.tone !== 'amber') return 'not amber';
+    r = RX(r.state, { type: 'TICK', t: T0 + 540 * SEC });
+    if (q(r.state, 0).doubleAt !== T0 + 540 * SEC || !hasSound(r.effects, 'nag')) return 'no 2× at 9:00';
+    var v = C.view(r.state, T0 + 541 * SEC);
+    if (v.run.clock.tone !== 'red' || !v.run.banners.some(function (b) { return b.tone === 'red' && /2×/.test(b.text); })) return 'not red / no message';
+    r = RX(r.state, { type: 'TICK', t: T0 + 569 * SEC });
+    if (q(r.state, 0).nags !== 0 || r.effects.length) return 'nag early';
+    r = RX(r.state, { type: 'TICK', t: T0 + 570 * SEC });
+    if (q(r.state, 0).nags !== 1 || !hasSound(r.effects, 'nag')) return 'no nag at 9:30';
+    r = RX(r.state, { type: 'TICK', t: T0 + 600 * SEC });
+    if (q(r.state, 0).nags !== 2) return 'no nag at 10:00';
+    if (r.state.block.cur !== 0) return 'advanced';
+    return true;
+  });
+
+  test('11 re-attempt: 10:00 cap, red past cap, commit/blank only, then marking', function () {
+    var s = C.initial(), r;
+    s = R(s, { type: 'GO_SETUP', mode: 'reattempt', t: T0 });
+    s = R(s, { type: 'START', mode: 'reattempt', idsText: 'A1\nA2\nA3', tz: 330, t: T0 });
+    if (s.block.questions.length !== 3) return 'ids not parsed';
+    r = RX(s, { type: 'TICK', t: T0 + 10 * MIN - 1 });
+    if (q(r.state, 0).capAt !== null || q(r.state, 0).dirAt !== null) return 'early cap/direction';
+    r = RX(r.state, { type: 'TICK', t: T0 + 10 * MIN });
+    if (q(r.state, 0).capAt !== T0 + 10 * MIN || !hasSound(r.effects, 'cap')) return 'no cap at 10:00';
+    var v = C.view(r.state, T0 + 11 * MIN);
+    var cap = v.run.info.filter(function (x) { return x.label === 'Cap'; })[0];
+    if (v.run.clock.tone !== 'red' || cap.text !== '+1:00' || cap.tone !== 'red') return 'past-cap not red';
+    s = R(r.state, { type: 'TICK', t: T0 + 30 * MIN });
+    if (s.block.cur !== 0) return 'advanced';
+    if (R(s, { type: 'PARK', t: T0 + 30 * MIN }) !== s) return 'park allowed';
+    s = commit(s, T0 + 31 * MIN); s = R(s, { type: 'PEEK', t: T0 + 32 * MIN }); s = commit(s, T0 + 33 * MIN); s = blank(s, T0 + 34 * MIN);
+    if (s.block.phase !== 'log') return 'no marking screen';
+    s = R(s, { type: 'MARK', ok: true, t: T0 + 35 * MIN });
+    s = R(s, { type: 'FOCUS', delta: 1, t: T0 + 35 * MIN }); s = R(s, { type: 'MARK', ok: true, t: T0 + 35 * MIN });
+    if (q(s, 1).mark !== 'x') return 'peeked ✓ in re-attempt';
+    s = R(s, { type: 'TAG', tag: 'A', t: T0 + 35 * MIN });
+    s = R(s, { type: 'FOCUS', delta: 1, t: T0 + 35 * MIN }); s = R(s, { type: 'TAG', tag: 'S', t: T0 + 35 * MIN });
+    s = R(s, { type: 'FINISH', t: T0 + 36 * MIN });
+    var sm = C.summary(s);
+    if (s.block.phase !== 'summary' || sm.correct !== 1 || sm.attempted !== 2 || sm.overCap.count !== 1) return 'summary wrong';
+    return true;
+  });
+
+  test('12 mock: section time from timestamps, pauses excluded, paper end, break overrun', function () {
+    var s = C.initial();
+    s = R(s, { type: 'GO_SETUP', mode: 'mock', t: T0 });
+    s = R(s, { type: 'START', mode: 'mock', tz: 330, t: T0 });
+    s = R(s, { type: 'SECTION', sec: 'C', t: T0 + 10 * MIN });
+    s = R(s, { type: 'PAUSE', t: T0 + 20 * MIN }); s = R(s, { type: 'PAUSE', t: T0 + 25 * MIN });
+    s = R(s, { type: 'SECTION', sec: 'M', t: T0 + 40 * MIN });
+    var v = C.view(s, T0 + 60 * MIN), sec = {};
+    v.run.sections.forEach(function (x) { sec[x.sec] = x.ms; });
+    if (sec.P !== 10 * MIN || sec.C !== 25 * MIN || sec.M !== 20 * MIN) return 'sections ' + JSON.stringify(sec);
+    var r = RX(s, { type: 'TICK', t: T0 + 185 * MIN - 1 });
+    if (r.state.block.phase !== 'paper1') return 'paper ended early';
+    r = RX(r.state, { type: 'TICK', t: T0 + 185 * MIN });
+    if (r.state.block.phase !== 'break' || !hasSound(r.effects, 'loud')) return 'paper end missing';
+    r = RX(r.state, { type: 'TICK', t: T0 + 230 * MIN });
+    if (r.state.block.breakOverAt !== T0 + 230 * MIN) return 'break end';
+    v = C.view(r.state, T0 + 233 * MIN);
+    if (v.run.clock.tone !== 'red' || v.run.clock.text !== '+3:00') return 'break overrun not red';
+    s = R(r.state, { type: 'START_PAPER2', t: T0 + 235 * MIN });
+    s = R(s, { type: 'SECTION', sec: 'M', t: T0 + 295 * MIN });
+    s = R(s, { type: 'TICK', t: T0 + 500 * MIN });
+    if (s.block.phase !== 'summary') return 'paper 2 did not end';
+    var sm = C.summary(s);
+    if (sm.papers[0].sections.M !== 145 * MIN || sm.papers[0].totalMs !== 180 * MIN) return 'paper1 ' + JSON.stringify(sm.papers[0]);
+    if (sm.papers[1].sections.P !== 60 * MIN || sm.papers[1].sections.M !== 120 * MIN) return 'paper2 ' + JSON.stringify(sm.papers[1]);
+    if (sm.breakOverrunMs !== 5 * MIN || sm.pauses.totalMs !== 5 * MIN) return 'break/pause totals';
+    return true;
+  });
+
+  function knownBlock() {
+    var s = practice(), t = T0;
+    s = commit(s, T0 + 3 * MIN);                                  // Q1 3:00
+    s = R(s, { type: 'PARK', t: T0 + 4 * MIN });                 // Q2 parked after 1:00
+    s = R(s, { type: 'PEEK', t: T0 + 5 * MIN });
+    s = commit(s, T0 + 10 * MIN);                                 // Q3 6:00, peeked
+    s = blank(s, T0 + 11 * MIN);                                  // Q4 blank
+    for (var i = 0; i < 6; i++) s = commit(s, T0 + (12 + i) * MIN); // Q5..Q10
+    s = commit(s, T0 + 19 * MIN);                                 // Q2 pass 2 (2:00)
+    s = R(s, { type: 'TO_LOG', t: T0 + 20 * MIN });
+    t = T0 + 21 * MIN;
+    var plan = [['Y'], ['C', 'sign error → recheck signs'], ['A'], ['S'], ['Y'], ['T'], ['Y'], ['Y'], ['Y'], ['Y']];
+    for (i = 0; i < 10; i++) {
+      if (i) s = R(s, { type: 'FOCUS', delta: 1, t: t });
+      var p = plan[i];
+      if (p[0] === 'Y') s = R(s, { type: 'MARK', ok: true, t: t });
+      else { s = R(s, { type: 'MARK', ok: false, t: t }); s = R(s, { type: 'TAG', tag: p[0], t: t }); }
+      if (p[1]) { s = R(s, { type: 'OPEN_NOTE', t: t }); s = R(s, { type: 'SAVE_NOTE', text: p[1], t: t }); }
+    }
+    s = R(s, { type: 'PAUSE', t: T0 + 25 * MIN }); s = R(s, { type: 'PAUSE', t: T0 + 27 * MIN });
+    return R(s, { type: 'FINISH', t: T0 + 40 * MIN });
+  }
+
+  test('13 summary numbers and +2/+7 dates for a known scenario', function () {
+    var s = knownBlock();
+    if (s.block.phase !== 'summary') return 'not finished: ' + s.block.ui.msg;
+    var m = C.summary(s);
+    var exp = { correct: 6, attempted: 9, size: 10, parkedCount: 1 };
+    for (var k in exp) if (m[k] !== exp[k]) return k + '=' + m[k];
+    if (!deq(m.tally, { C: 1, A: 1, S: 1, T: 1 })) return 'tally ' + JSON.stringify(m.tally);
+    if (m.overTarget.count !== 1 || m.overTarget.ids[0] !== 'Q3') return 'overTarget ' + JSON.stringify(m.overTarget);
+    if (m.longest.id !== 'Q3' || m.longest.ms !== 6 * MIN) return 'longest';
+    if (!deq(m.wrong.map(function (w) { return w.id; }), ['Q2', 'Q3', 'Q4', 'Q6'])) return 'wrong list';
+    if (m.wrong[0].note !== 'sign error → recheck signs' || m.wrong[0].tag !== 'C') return 'note/tag';
+    if (!deq(m.unattempted, ['Q4'])) return 'unattempted';
+    if (m.pauses.count !== 1 || m.pauses.totalMs !== 2 * MIN) return 'pauses';
+    if (m.overrun.solveMs !== 0 || m.overrun.logMs !== 3 * MIN) return 'overrun ' + JSON.stringify(m.overrun);
+    if (m.reattempt.plus2.date !== '2026-11-15' || m.reattempt.plus7.date !== '2026-11-20') return 'dates ' + m.reattempt.plus2.date;
+    if (!deq(m.reattempt.plus7.ids, ['Q2', 'Q3', 'Q4', 'Q6'])) return 're-attempt ids';
+    if (m.questions[1].ms !== 3 * MIN) return 'Q2 total across passes ' + m.questions[1].ms;
+    var txt = C.summaryText(s);
+    if (txt.indexOf('✓ 6 / attempted 9 / set 10') < 0 || txt.indexOf('2026-11-15') < 0 || txt.indexOf('Q2 [C] sign error') < 0) return 'text';
+    // local-date edge: 20:00 UTC is already the next day in IST
+    var late = practice({ t0: Date.UTC(2026, 10, 13, 20, 0, 0) });
+    if (C.summary(late).reattempt.plus2.date !== '2026-11-16') return 'tz date edge';
+    var utc = practice({ t0: Date.UTC(2026, 10, 13, 20, 0, 0), tz: 0 });
+    if (C.summary(utc).reattempt.plus7.date !== '2026-11-20') return 'tz 0 date';
+    // finishing is refused while a ✗ lacks a tag
+    var s2 = practice(), t = T0;
+    for (var i = 0; i < 10; i++) s2 = blank(s2, t += SEC);
+    s2 = R(s2, { type: 'TO_LOG', t: t });
+    s2 = R(s2, { type: 'FINISH', t: t });
+    if (s2.block.phase !== 'log' || !/tag/.test(s2.block.ui.msg)) return 'finish not refused for missing tag';
+    return true;
+  });
+
+  test('14 times immutable after the block; marks/tags/notes stay editable; reduce never mutates input', function () {
+    var s = knownBlock();
+    function times(st) {
+      var b = st.block;
+      return JSON.stringify([b.startedAt, b.endedAt, b.solveStartedAt, b.solveEndedAt, b.logStartedAt, b.logOverAt, b.pauses, b.overrun, b.lastT,
+        b.questions.map(function (q) { return [q.segments, q.startedAt, q.endedAt, q.peekedAt, q.parkedAt, q.dirAt, q.targetAt, q.doubleAt, q.nags, q.capAt]; })]);
+    }
+    var before = times(s), snap = JSON.stringify(s);
+    var acts = [{ type: 'TICK', t: T0 + 900 * MIN }, { type: 'TAG', tag: 'S', t: T0 + 901 * MIN }, { type: 'MARK', ok: true, t: T0 + 902 * MIN },
+      { type: 'SET_TIME', t: T0 }, { type: 'PAUSE', t: T0 + 903 * MIN }, { type: 'COMMIT', text: 'x', t: T0 + 904 * MIN },
+      { type: 'OPEN_NOTE', t: T0 + 905 * MIN }, { type: 'SAVE_NOTE', text: 'new', t: T0 + 905 * MIN }, { type: 'FINISH', t: T0 + 906 * MIN }];
+    var x = s;
+    for (var i = 0; i < acts.length; i++) x = R(x, acts[i]);
+    if (JSON.stringify(s) !== snap) return 'input mutated';
+    if (times(x) !== before) return 'times changed';
+    if (q(x, 0).mark !== 'ok' || q(x, 0).tag !== null) return 'Q1 should be ✓ again (Y after tag)';
+    var y = R(x, { type: 'FOCUS', delta: 1, t: T0 + 907 * MIN });
+    y = R(y, { type: 'TAG', tag: 'S', t: T0 + 907 * MIN });
+    var m = C.summary(y);
+    if (m.tally.S !== 2 || m.tally.C !== 0) return 'tally did not update ' + JSON.stringify(m.tally);
+    if (times(y) !== before) return 'times changed after edit';
+    if (C.summaryText(y).indexOf('Q2 [S]') < 0) return 'copy text not updated';
+    // every reduce leaves its input untouched (scenario run)
+    var A = scenario(), st = practice();
+    for (i = 0; i < A.length; i++) { var j = JSON.stringify(st); var n = R(st, A[i]); if (JSON.stringify(st) !== j) return 'mutated by ' + A[i].type; st = n; }
+    return true;
+  });
+
+  test('15 blurt: 30:00 write → 5:00 check with loud alert, overrun recorded', function () {
+    var s = C.initial(), r;
+    s = R(s, { type: 'GO_SETUP', mode: 'blurt', t: T0 });
+    s = R(s, { type: 'START', mode: 'blurt', label: 'Rotation', tz: 330, t: T0 });
+    r = RX(s, { type: 'TICK', t: T0 + 30 * MIN });
+    if (r.state.block.phase !== 'check' || r.state.block.checkStartedAt !== T0 + 30 * MIN || !hasSound(r.effects, 'loud')) return 'no switch at 30:00';
+    r = RX(r.state, { type: 'TICK', t: T0 + 35 * MIN });
+    if (r.state.block.checkOverAt !== T0 + 35 * MIN || !hasSound(r.effects, 'loud')) return 'no alert at 35:00';
+    if (C.view(r.state, T0 + 36 * MIN).run.clock.tone !== 'red') return 'overrun not red';
+    s = R(r.state, { type: 'FINISH', t: T0 + 37 * MIN });
+    var m = C.summary(s);
+    if (m.writeMs !== 30 * MIN || m.checkMs !== 7 * MIN || m.overrunMs !== 2 * MIN) return JSON.stringify(m);
+    return true;
+  });
+
+  test('16 break: counts down, overrun red until next block, recorded in history', function () {
+    var s = C.initial(), r;
+    s = R(s, { type: 'START', mode: 'break', breakMin: 10, tz: 330, t: T0 });
+    r = RX(s, { type: 'TICK', t: T0 + 10 * MIN });
+    if (r.state.block.overAt !== T0 + 10 * MIN || !hasSound(r.effects, 'loud')) return 'no alert at 10:00';
+    var v = C.view(r.state, T0 + 12 * MIN);
+    if (v.run.clock.tone !== 'red' || v.run.clock.text !== '+2:00') return 'not red overrun';
+    s = R(r.state, { type: 'END_BREAK', t: T0 + 12 * MIN });
+    var h = s.history[s.history.length - 1];
+    if (s.screen !== 'home' || h.overrunMs !== 2 * MIN) return 'overrun not recorded';
+    return true;
+  });
+
+  test('17 abandon needs explicit confirm and is recorded', function () {
+    var s = practice();
+    s = R(s, { type: 'ABANDON', t: T0 + MIN });
+    if (s.screen !== 'block') return 'abandoned without confirm';
+    var c = R(s, { type: 'CANCEL', t: T0 + MIN });
+    if (c.block.ui.input !== null) return 'cancel';
+    s = R(s, { type: 'ABANDON_CONFIRM', t: T0 + 2 * MIN });
+    if (s.screen !== 'home' || s.block !== null || s.history[0].abandonedAt !== T0 + 2 * MIN) return 'not recorded';
+    if (!C.isValidState(JSON.parse(JSON.stringify(s)))) return 'invalid after abandon';
+    return true;
+  });
+
+  function run() {
+    return tests.map(function (x) {
+      var res;
+      try { res = x.fn(); } catch (e) { res = 'threw: ' + (e && e.stack || e); }
+      return { name: x.name, pass: res === true, detail: res === true ? '' : String(res) };
+    });
+  }
+  return { run: run };
+})();
+</script>
+
+<script id="shell">
+/* Crown Dial — Shell: the only impure part (clock, storage, sound, notifications, DOM, keys). */
+(function () {
+  'use strict';
+  var KEY = 'crownDial.v1', BACKUP = 'crownDial.v1.backup';
+  var $ = function (id) { return document.getElementById(id); };
+  var params = new URLSearchParams(location.search);
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  /* ----- ?test: render SelfTest, never touch the saved session ----- */
+  if (params.has('test')) {
+    var res = [];
+    try { res = SelfTest.run(); } catch (e) { res = [{ name: 'SelfTest.run', pass: false, detail: String(e) }]; }
+    var fails = res.filter(function (r) { return !r.pass; }).length;
+    document.title = fails ? 'FAIL ' + fails : 'PASS';
+    $('screen-test').hidden = false;
+    $('testHead').textContent = 'Self-test — ' + (res.length - fails) + '/' + res.length + ' passed';
+    $('tests').innerHTML = res.map(function (r) {
+      return '<li><span class="' + (r.pass ? '' : 'amber') + '">' + (r.pass ? 'PASS' : 'FAIL') + '</span> ' + esc(r.name) + (r.detail ? ' — <span class="muted">' + esc(r.detail) + '</span>' : '') + '</li>';
+    }).join('');
+    $('legendIn').innerHTML = '<span>Self-test mode · saved session untouched</span>';
+    return;
+  }
+
+  /* ----- persistence ----- */
+  var storageOk = true, notice = '';
+  function load() {
+    var raw = null;
+    try { raw = localStorage.getItem(KEY); } catch (e) { storageOk = false; return Core.initial(); }
+    if (!raw) return Core.initial();
+    try {
+      var s = JSON.parse(raw);
+      if (Core.isValidState(s)) return s;
+      throw new Error('shape');
+    } catch (e) {
+      try { localStorage.setItem(BACKUP, raw); } catch (e2) { /* ignore */ }
+      notice = 'Saved data was unreadable — started fresh (old data kept under “' + BACKUP + '”).';
+      return Core.initial();
+    }
+  }
+  function save() {
+    if (!storageOk) return;
+    try { localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch (e) { storageOk = false; showNotice('Could not save to localStorage — this session will not survive a reload.'); }
+  }
+
+  /* ----- sound (WebAudio, generated) ----- */
+  var actx = null;
+  function ensureAudio() {
+    try {
+      if (!actx) { var AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC(); }
+      if (actx && actx.state === 'suspended') actx.resume();
+    } catch (e) { actx = null; }
+  }
+  function tone(f, at, dur, type, gain) {
+    var o = actx.createOscillator(), g = actx.createGain(), t0 = actx.currentTime + at;
+    o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(actx.destination); o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  var PATTERNS = {
+    direction: function () { tone(660, 0, 0.16, 'sine', 0.25); tone(880, 0.2, 0.24, 'sine', 0.25); },
+    soft: function () { tone(523, 0, 0.45, 'sine', 0.12); },
+    nag: function () { tone(440, 0, 0.12, 'triangle', 0.22); tone(440, 0.18, 0.12, 'triangle', 0.22); },
+    loud: function () { for (var i = 0; i < 3; i++) { tone(880, i * 0.32, 0.22, 'square', 0.22); tone(660, i * 0.32 + 0.11, 0.1, 'square', 0.15); } },
+    cap: function () { for (var i = 0; i < 4; i++) tone(i % 2 ? 740 : 988, i * 0.2, 0.17, 'sawtooth', 0.18); }
+  };
+  function play(effects) {
+    var seen = {};
+    effects.forEach(function (e) {
+      var k = e.type + ':' + (e.name || e.title);
+      if (seen[k]) return; seen[k] = 1;
+      if (e.type === 'sound') { if (actx && PATTERNS[e.name]) { try { PATTERNS[e.name](); } catch (x) { /* ignore */ } } }
+      else if (e.type === 'notify') {
+        try { if ('Notification' in window && Notification.permission === 'granted') new Notification(e.title, { body: e.body, tag: 'crown-dial-' + e.title }); }
+        catch (x) { /* ignore */ }
+      }
+    });
+  }
+  var askedPermission = false;
+  function onStartGesture() {
+    ensureAudio();
+    if (askedPermission) return; askedPermission = true;
+    try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch (e) { /* ignore */ }
+  }
+
+  /* ----- dispatch ----- */
+  var state = load();
+  function dispatch(a) {
+    a.t = Date.now();
+    if (a.type === 'START') { a.tz = -new Date().getTimezoneOffset(); onStartGesture(); }
+    var r = Core.reduce(state, a);
+    if (r.state !== state) { state = r.state; save(); }
+    play(r.effects);
+    render();
+  }
+
+  /* ----- notices ----- */
+  var noticeTimer = null;
+  function showNotice(t) {
+    $('notice').textContent = t;
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(function () { $('notice').textContent = ''; }, 7000);
+  }
+
+  /* ----- copy ----- */
+  var copiedFlag = false, copiedTimer = null;
+  function doCopy() {
+    var v = Core.view(state, Date.now());
+    var text = v.run && v.run.summaryText; if (!text) return;
+    var ta = $('copyText');
+    ta.value = text;
+    function ok() { copiedFlag = true; clearTimeout(copiedTimer); copiedTimer = setTimeout(function () { copiedFlag = false; render(); }, 2500); render(); }
+    function fallback() {
+      $('copyBox').hidden = false; ta.focus(); ta.select();
+      var done = false; try { done = document.execCommand('copy'); } catch (e) { done = false; }
+      ta.blur();
+      if (done) ok(); else showNotice('Clipboard unavailable here — the text is shown below; select it and copy.');
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(ok, fallback);
+    else fallback();
+  }
+
+  /* ----- rendering ----- */
+  var shown = '', lastRun = '', lastHome = '', lastLegend = '', inputKey = null, setupShownFor = null;
+  function showScreen(id) {
+    ['screen-home', 'screen-setup', 'screen-run'].forEach(function (x) { $(x).hidden = x !== id; });
+    shown = id;
+  }
+  function renderLegend(v) {
+    var html = v.legend.map(function (k) { return '<span><kbd>' + esc(k.show) + '</kbd> ' + esc(k.label) + '</span>'; }).join('');
+    if (html !== lastLegend) { $('legendIn').innerHTML = html; lastLegend = html; }
+  }
+  function renderHome(v) {
+    var h = '<h1>Crown Dial</h1><ul class="menu">' +
+      [['1', 'Practice set', '10–15 questions · solve + log'], ['2', 'Re-attempt', 'pasted IDs · 10:00 cap each'], ['3', 'Blurt', '30:00 write + 5:00 check'],
+        ['4', 'Mock paper', '3 h · 45 min break · 3 h'], ['5', 'Break 5', ''], ['6', 'Break 10', ''], ['7', 'Break 15', '']]
+        .map(function (m) { return '<li><kbd>' + m[0] + '</kbd><span>' + m[1] + ' <span class="dim">' + m[2] + '</span></span></li>'; }).join('') + '</ul>';
+    if (v.home.history.length) {
+      h += '<h2>Recent</h2><div class="hist">' + v.home.history.map(function (x) { return '<div><span class="tab">' + esc(x.date) + '</span> · ' + esc(x.mode) + ' · <span class="tab">' + esc(x.text) + '</span></div>'; }).join('') + '</div>';
+    }
+    if (h !== lastHome) { $('screen-home').innerHTML = h; lastHome = h; }
+  }
+  function renderSetup(v) {
+    var mode = v.setup.mode;
+    if (setupShownFor !== mode) {
+      setupShownFor = mode;
+      $('setupTitle').textContent = v.setup.modeName + ' — setup';
+      Array.prototype.forEach.call(document.querySelectorAll('#screen-setup [data-modes]'), function (el) {
+        el.hidden = el.getAttribute('data-modes').split(' ').indexOf(mode) < 0;
+      });
+      var p = v.setup.prefs || {};
+      if (mode === 'practice') {
+        $('targetMin').value = p.targetMin || 4.5;
+        $('customMin').value = p.customMin || 30;
+        var r = document.querySelector('input[name=block][value="' + (p.blockChoice || '90') + '"]');
+        if (r) r.checked = true;
+      }
+      $('idsLabel').textContent = mode === 'practice' ? 'Question IDs — one per line, 10–15 (or just a count)' : 'Question IDs to re-attempt — one per line (or a count)';
+      $('labelLbl').textContent = mode === 'blurt' ? 'Topic (optional)' : 'Paper label (optional)';
+      $('modeHint').textContent = {
+        practice: 'Ctrl+Enter starts. 2:00 direction check · park ↩ · second pass 5:00 cap · commit or blank only.',
+        reattempt: 'Ctrl+Enter starts. Single pass, 10:00 cap each, commit or blank only, then marking (no countdown).',
+        blurt: 'Enter starts. 30:00 write, then 5:00 check.',
+        mock: 'Enter starts Paper 1 (section P active; 1/2/3 switch P/C/M).'
+      }[mode];
+      updateHints();
+      setTimeout(function () { var f = mode === 'practice' || mode === 'reattempt' ? $('ids') : $('label'); f.focus(); }, 0);
+    }
+    $('setupErr').textContent = v.setup.error || '';
+  }
+  function blockChoice() { var r = document.querySelector('input[name=block]:checked'); return r ? r.value : '90'; }
+  function updateHints() {
+    var ids = Core.parseIds($('ids').value);
+    $('idsHint').textContent = ids.length ? ids.length + ' question' + (ids.length > 1 ? 's' : '') + ': ' + ids.slice(0, 3).join(', ') + (ids.length > 3 ? ', …' : '') : '';
+    var ch = blockChoice(), sp = Core.splits(ch === 'custom' ? $('customMin').value : ch);
+    $('splitHint').textContent = sp ? 'Solve ' + sp.solveMin + ' min + log ' + sp.logMin + ' min' : '';
+  }
+  ['ids', 'customMin'].forEach(function (id) { $(id).addEventListener('input', updateHints); });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name=block]'), function (r) { r.addEventListener('change', updateHints); });
+  function startFromForm() {
+    var mode = state.setupMode, ch = blockChoice();
+    dispatch({ type: 'START', mode: mode, idsText: $('ids').value, blockChoice: ch,
+      blockMin: ch === 'custom' ? Number($('customMin').value) : Number(ch), targetMin: Number($('targetMin').value), label: $('label').value });
+    if (state.screen === 'block') { $('ids').value = ''; $('label').value = ''; setupShownFor = null; }
+  }
+
+  function renderRows(R) {
+    return '<div class="rows">' + R.rows.map(function (r) {
+      var tag = r.tag ? ' <kbd>' + esc(r.tag) + '</kbd>' : (r.needs === 'tag' ? ' <span class="amber">tag?</span>' : '');
+      return '<div class="r' + (r.focus ? ' focus' : '') + '"><span class="mk">' + r.mark + '</span><span class="id">' + esc(r.id) + tag + '</span>' +
+        '<span class="meta tab ' + (r.tone || '') + '">' + r.time + '</span><span class="sub">' + esc(r.sub) + (r.note ? '<br>' + esc(r.note) : '') + '</span></div>';
+    }).join('') + '</div>';
+  }
+  function fmtMs(ms) { return Core.fmt(ms); }
+  function renderSummary(S, R) {
+    var h = '<div class="sum"><dl>';
+    function row(k, val, cls) { h += '<dt>' + k + '</dt><dd class="tab ' + (cls || '') + '">' + val + '</dd>'; }
+    row('Started', esc(S.startLocal));
+    if (S.mode === 'practice' || S.mode === 'reattempt') {
+      row('Result', '✓ ' + S.correct + ' / attempted ' + S.attempted + ' / set ' + S.size);
+      row('Tags', 'C ' + S.tally.C + ' · A ' + S.tally.A + ' · S ' + S.tally.S + ' · T ' + S.tally.T);
+      row('Parked', String(S.parkedCount));
+      if (S.overTarget) row('Over target', S.overTarget.count + (S.overTarget.count ? ' — ' + esc(S.overTarget.ids.join(', ')) : ''));
+      if (S.overCap) row('Hit cap', S.overCap.count + (S.overCap.count ? ' — ' + esc(S.overCap.ids.join(', ')) : ''));
+      if (S.longest) row('Longest', esc(S.longest.id) + ' ' + S.longest.text);
+      row('Unattempted', S.unattempted.length ? esc(S.unattempted.join(', ')) : 'none');
+      row('Pauses', S.pauses.count + ' · ' + fmtMs(S.pauses.totalMs));
+      row('Solve overrun', '+' + fmtMs(S.overrun.solveMs), S.overrun.solveMs ? 'red' : '');
+      row('Log overrun', '+' + fmtMs(S.overrun.logMs), S.overrun.logMs ? 'red' : '');
+      row('Re-attempt ' + esc(S.reattempt.plus2.date), S.reattempt.plus2.ids.length ? esc(S.reattempt.plus2.ids.join(', ')) : 'none');
+      row('Re-attempt ' + esc(S.reattempt.plus7.date), S.reattempt.plus7.ids.length ? esc(S.reattempt.plus7.ids.join(', ')) : 'none');
+      h += '</dl></div><h2>✗ list</h2>' + (S.wrong.length ? '<div class="hist">' + S.wrong.map(function (w) { return '<div>' + esc(w.id) + ' [' + esc(w.tag || '?') + ']' + (w.note ? ' ' + esc(w.note) : '') + '</div>'; }).join('') + '</div>' : '<p class="muted">none</p>');
+      h += '<h2>Questions (marks editable)</h2>' + renderRows(R);
+      return h;
+    }
+    if (S.mode === 'blurt') {
+      row('Write', fmtMs(S.writeMs) + (S.writeEarly ? ' (ended early)' : ''));
+      row('Check', fmtMs(S.checkMs));
+      row('Overrun', '+' + fmtMs(S.overrunMs), S.overrunMs ? 'red' : '');
+    } else if (S.mode === 'mock') {
+      S.papers.forEach(function (p) { row('Paper ' + p.n, 'P ' + fmtMs(p.sections.P) + ' · C ' + fmtMs(p.sections.C) + ' · M ' + fmtMs(p.sections.M) + ' = ' + fmtMs(p.totalMs) + (p.early ? ' (early)' : '')); });
+      row('Break', fmtMs(S.breakMs));
+      row('Break overrun', '+' + fmtMs(S.breakOverrunMs), S.breakOverrunMs ? 'red' : '');
+    }
+    row('Pauses', S.pauses.count + ' · ' + fmtMs(S.pauses.totalMs));
+    return h + '</dl></div>';
+  }
+  function renderRun(v) {
+    var R = v.run, h = '';
+    var head = esc(R.modeName) + (R.passText ? ' · ' + esc(R.passText) : '');
+    var right = R.pauseInfo ? '<span class="tab">' + esc(R.pauseInfo) + '</span>' : '';
+    h += '<div class="head"><span>' + head + '</span>' + right + '</div>';
+    if (R.prompt) h += '<div class="prompt">' + esc(R.prompt) + '</div>';
+    if (R.paused) {
+      h += '<div class="paused"><div class="clabel">paused for</div><div class="clock tab">' + R.paused.text + '</div><div class="big">PAUSED</div>' +
+        '<div class="muted">All clocks stopped. Space resumes. Pause #' + R.paused.count + ' is logged.</div></div>';
+      if (R.q) h += '<p class="muted" style="text-align:center">' + esc(R.q.id) + (R.q.pos ? ' · ' + R.q.pos : '') + '</p>';
+    } else {
+      if (R.q) h += '<div class="qid">' + esc(R.q.id) + (R.q.pos ? ' <span class="muted tab">' + R.q.pos + '</span>' : '') + (R.q.peeked ? '<span class="tag-peek">peeked</span>' : '') + '</div>';
+      if (R.clock) h += '<div class="clock ' + (R.clock.text.length > 5 ? 'long ' : '') + (R.clock.tone || '') + '">' + esc(R.clock.text) + '</div><div class="clabel">' + esc(R.clock.label) + '</div>';
+      if (R.sections) h += '<div class="secs">' + R.sections.map(function (x) { return '<div class="' + (x.on ? 'on' : '') + '"><b>' + x.sec + (x.on ? ' · now' : '') + '</b><span class="tab">' + x.text + '</span></div>'; }).join('') + '</div>';
+      if (R.info.length) h += '<div class="info">' + R.info.map(function (x) { return '<span><b>' + esc(x.label) + '</b><span class="tab ' + (x.tone || '') + '">' + esc(x.text) + '</span></span>'; }).join('') + '</div>';
+      R.banners.forEach(function (b) { h += '<div class="banner ' + (b.tone || '') + '">' + esc(b.text) + '</div>'; });
+      if (R.kind === 'log') h += renderRows(R);
+      if (R.kind === 'summary' && R.summary) h += (copiedFlag ? '<div class="copied">Copied ✓</div>' : '') + renderSummary(R.summary, R);
+    }
+    if (R.msg) h += '<div class="msg">' + esc(R.msg) + '</div>';
+    if (R.strip && !R.paused) {
+      h += '<div class="strip">' + R.strip.map(function (x) {
+        return '<span title="' + esc(x.id) + '" class="' + (x.cur ? 'cur ' : '') + (x.tone || '') + '">' + x.glyph + (x.peeked ? '<sup>h</sup>' : '') + '</span>';
+      }).join('') + '</div><div class="strip-key">● active · ↩ parked · ■ committed · □ blank · · not reached · ʰ peeked · amber over target · red 2× / cap</div>';
+    }
+    if (h !== lastRun) {
+      $('runBody').innerHTML = h; lastRun = h;
+      var fr = document.querySelector('#runBody .r.focus');
+      if (fr && fr.scrollIntoView) fr.scrollIntoView({ block: 'nearest' });
+    }
+    // persistent input field (not re-created by innerHTML, so typing is never lost)
+    var row = $('inputRow'), f = $('field');
+    if (v.input && !R.paused) {
+      if (inputKey !== v.input.key) {
+        inputKey = v.input.key; row.hidden = false;
+        $('fieldLabel').textContent = v.input.label; f.placeholder = v.input.placeholder; f.maxLength = v.input.max; f.value = v.input.value;
+      }
+      if (document.activeElement !== f) f.focus();
+    } else if (inputKey !== null) { inputKey = null; row.hidden = true; f.value = ''; f.blur(); }
+    if (R.kind !== 'summary') $('copyBox').hidden = true;
+  }
+  function render() {
+    var v = Core.view(state, Date.now());
+    document.title = v.title;
+    renderLegend(v);
+    if (v.screen === 'home') { if (shown !== 'screen-home') showScreen('screen-home'); setupShownFor = null; renderHome(v); }
+    else if (v.screen === 'setup') { if (shown !== 'screen-setup') showScreen('screen-setup'); renderSetup(v); }
+    else { if (shown !== 'screen-run') showScreen('screen-run'); setupShownFor = null; renderRun(v); }
+  }
+
+  /* ----- keyboard ----- */
+  function keyName(e) {
+    if (e.key === ' ' || e.key === 'Spacebar') return 'Space';
+    if (e.key.length === 1) return e.key.toLowerCase();
+    return e.key;
+  }
+  document.addEventListener('keydown', function (e) {
+    ensureAudio();
+    var tg = e.target, tag = tg && tg.tagName;
+    var inField = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+    if (inField && tg.id === 'field') {
+      var v0 = Core.view(state, Date.now());
+      if (e.key === 'Enter' && v0.input) { e.preventDefault(); dispatch({ type: v0.input.submit, text: tg.value }); }
+      else if (e.key === 'Escape') { e.preventDefault(); dispatch({ type: 'CANCEL' }); }
+      return;
+    }
+    if (inField && tg.id === 'copyText') { if (e.key === 'Escape') { tg.blur(); $('copyBox').hidden = true; } return; }
+    if (state.screen === 'setup') {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey || (inField && tag !== 'TEXTAREA'))) { e.preventDefault(); startFromForm(); return; }
+      if (e.key === 'Escape') { e.preventDefault(); if (inField) tg.blur(); else dispatch({ type: 'GO_HOME' }); return; }
+      return; // everything else (typing, Tab, arrows on radios) is native
+    }
+    if (inField) { if (e.key === 'Escape') tg.blur(); return; } // single-letter shortcuts ignored while a field has focus
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var name = keyName(e), v = Core.view(state, Date.now());
+    var hit = null;
+    for (var i = 0; i < v.keys.length; i++) if (v.keys[i].action && v.keys[i].keys.indexOf(name) >= 0) { hit = v.keys[i]; break; }
+    if (!hit) return;
+    e.preventDefault();
+    if (noticeTimer && $('notice').textContent && /Resumed/.test($('notice').textContent)) $('notice').textContent = '';
+    if (hit.action.type === 'COPY') { doCopy(); return; }
+    if (hit.action.type === 'FORM_START') { startFromForm(); return; }
+    var a = {}; for (var k in hit.action) a[k] = hit.action[k];
+    dispatch(a);
+  });
+
+  /* ----- boot ----- */
+  var wasLive = state.screen === 'block' && state.block && ['summary', 'done'].indexOf(state.block.phase) < 0;
+  dispatch({ type: 'TICK' });
+  if (notice) showNotice(notice);
+  else if (!storageOk) showNotice('localStorage is unavailable — this session will not survive a reload.');
+  else if (wasLive) showNotice('Resumed — clock kept running.');
+  setInterval(function () { dispatch({ type: 'TICK' }); }, 250);
+  document.addEventListener('visibilitychange', function () { dispatch({ type: 'TICK' }); });
+})();
+</script>
+</body>
+</html>
